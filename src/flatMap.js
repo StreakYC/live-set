@@ -7,6 +7,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
   const childSets: Map<T, LiveSet<U>> = new Map();
   return new LiveSet({
     read() {
+      childSets.clear();
       const s = new Set();
       liveSet.values().forEach(value => {
         const childSet = cb(value);
