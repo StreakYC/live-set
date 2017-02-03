@@ -7,24 +7,25 @@ import delay from 'pdelay';
 test('works', async () => {
   const lsCleanup = jest.fn();
   const ls = new LiveSet({
-    read: () => new Set(['1', 'one']),
+    read: () => new Set([{x:'1'}, {x:'one'}]),
     listen(controller) {
-      controller.add('uno');
+      const originalValues = Array.from(ls.values());
+      controller.add({x:'uno'});
       setTimeout(() => {
-        controller.remove('1');
-        controller.add('ten');
+        controller.remove(originalValues[0]);
+        controller.add({x:'ten'});
       }, 30);
       return lsCleanup;
     }
   });
 
-  const mapper = jest.fn(x => `:${x}`);
+  const mapper = jest.fn(x => ({m:x.x}));
   const mappedLs = map(ls, mapper);
 
-  expect(Array.from(mappedLs.values())).toEqual([':1', ':one']);
+  expect(Array.from(mappedLs.values())).toEqual([{m:'1'}, {m:'one'}]);
   expect(mapper.mock.calls).toEqual([
-    ['1'],
-    ['one']
+    [{x:'1'}],
+    [{x:'one'}]
   ]);
 
   const next = jest.fn();
@@ -32,14 +33,16 @@ test('works', async () => {
 
   await delay(60);
 
-  expect(Array.from(mappedLs.values())).toEqual([':one', ':uno', ':ten']);
+  expect(Array.from(mappedLs.values())).toEqual([
+    {m:'one'}, {m:'uno'}, {m:'ten'}
+  ]);
   expect(mapper.mock.calls).toEqual([
-    ['1'],
-    ['one'],
-    ['1'],
-    ['one'],
-    ['uno'],
-    ['ten']
+    [{x:'1'}],
+    [{x:'one'}],
+    [{x:'1'}],
+    [{x:'one'}],
+    [{x:'uno'}],
+    [{x:'ten'}]
   ]);
   expect(lsCleanup).toHaveBeenCalledTimes(0);
 

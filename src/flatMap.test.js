@@ -92,3 +92,20 @@ test('works', async () => {
   expect(ls2Cleanup).toHaveBeenCalledTimes(4);
   expect(complete).toHaveBeenCalledTimes(1);
 });
+
+test('handles removal of initial values', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+
+  const fls = flatMap(liveSet, x => new LiveSet({
+    read: () => new Set([{x}]),
+    listen: () => {}
+  }));
+
+  const next = jest.fn();
+  fls.subscribe(next);
+
+  expect(Array.from(fls.values())).toEqual([{x: 5}, {x: 6}]);
+  controller.remove(5);
+  await delay(0);
+  expect(Array.from(fls.values())).toEqual([{x: 6}]);
+});
