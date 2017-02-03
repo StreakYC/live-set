@@ -37,6 +37,7 @@
     "flow-bin": "^0.38.0",
     "flow-copy-source": "^1.1.0",
     "jest": "^18.1.0",
-    "pdelay": "^1.0.0"
+    "pdelay": "^1.0.0",
+    "transducers.js": "^0.3.2"
   }
 }
