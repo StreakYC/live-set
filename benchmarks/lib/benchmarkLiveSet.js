@@ -3,7 +3,7 @@
 
 import type LiveSet, {LiveSetController} from '../../src';
 
-export default async function benchmarkLiveSet(liveSet: LiveSet<number>, controller: LiveSetController<number>) {
+export default async function benchmarkLiveSet(liveSet: LiveSet<number>, controller: LiveSetController<number>, itemsToInsert: number=20000) {
   function read() {
     return liveSet.values();
   }
@@ -37,10 +37,10 @@ export default async function benchmarkLiveSet(liveSet: LiveSet<number>, control
       console.log('change count', changes.length);
       resolve();
     });
-    for (let i=10000; i<30000; i++) {
+    for (let i=10000; i<10000+itemsToInsert; i++) {
       controller.add(i);
     }
-    for (let i=10000; i<20000; i++) {
+    for (let i=10000; i<10000+itemsToInsert/2; i++) {
       controller.remove(i);
     }
   });
