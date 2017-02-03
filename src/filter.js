@@ -7,13 +7,14 @@ export default function filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): L
   return new LiveSet({
     read: () => {
       s.clear();
-      return new Set(Array.from(liveSet.values()).filter(value => {
-        const keep = cb(value);
-        if (keep) {
+      const ret = new Set();
+      liveSet.values().forEach(value => {
+        if (cb(value)) {
           s.add(value);
+          ret.add(value);
         }
-        return keep;
-      }));
+      });
+      return ret;
     },
     listen: controller => liveSet.subscribe({
       next(changes) {
