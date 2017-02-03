@@ -54,6 +54,19 @@ export default class LiveSet<T> {
     this._listen = init.listen;
   }
 
+  static active<T>(initialValues: ?Set<T>): {liveSet: LiveSet<T>, controller: LiveSetController<T>} {
+    const set = initialValues || new Set();
+    let controller;
+    const liveSet = new LiveSet({
+      read: () => set,
+      listen: _controller => {
+        controller = _controller;
+      }
+    });
+    liveSet.subscribe({});
+    return {liveSet, controller: (controller: any)};
+  }
+
   _queueChange(record: ?LiveSetChangeRecord<T>) {
     if (record) {
       this._changeQueue.push(record);

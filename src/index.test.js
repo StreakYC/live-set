@@ -165,15 +165,14 @@ test('subscribe, end', async () => {
 });
 
 test('error', async () => {
-  const ls = new LiveSet({
-    read: () => new Set([1]),
-    listen(c) {
-      c.add(2);
-      c.error(new Error('foo'));
-    }
-  });
+  const {liveSet, controller} = LiveSet.active(new Set([1]));
+
   const start = jest.fn(), next = jest.fn(), error = jest.fn(), complete = jest.fn();
-  const sub = ls.subscribe({start, next, error, complete});
+  const sub = liveSet.subscribe({start, next, error, complete});
+
+  controller.add(2);
+  controller.error(new Error('foo'));
+
   expect(start).toHaveBeenCalledTimes(1);
   expect(start.mock.calls[0][0]).toEqual(sub);
   expect(next).toHaveBeenCalledTimes(0);
