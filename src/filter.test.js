@@ -7,25 +7,27 @@ import delay from 'pdelay';
 test('works', async () => {
   const lsCleanup = jest.fn();
   const ls = new LiveSet({
-    read: () => new Set([1, 2]),
-    listen(controller) {
-      controller.add(3);
+    read: () => new Set([{x:1}, {x:2}]),
+    listen(setValues, controller) {
+      setValues(this.read());
+      const originalValues = Array.from(ls.values());
+      controller.add({x:3});
       setTimeout(() => {
-        controller.remove(1);
-        controller.remove(2);
-        controller.add(4);
+        controller.remove(originalValues[0]);
+        controller.remove(originalValues[1]);
+        controller.add({x:4});
       }, 30);
       return lsCleanup;
     }
   });
 
-  const filterFn = jest.fn(x => x % 2 === 0);
+  const filterFn = jest.fn(x => x.x % 2 === 0);
   const filteredLs = filter(ls, filterFn);
 
-  expect(Array.from(filteredLs.values())).toEqual([2]);
+  expect(Array.from(filteredLs.values())).toEqual([{x:2}]);
   expect(filterFn.mock.calls).toEqual([
-    [1],
-    [2]
+    [{x:1}],
+    [{x:2}]
   ]);
 
   const next = jest.fn();
@@ -33,14 +35,14 @@ test('works', async () => {
 
   await delay(60);
 
-  expect(Array.from(filteredLs.values())).toEqual([4]);
+  expect(Array.from(filteredLs.values())).toEqual([{x:4}]);
   expect(filterFn.mock.calls).toEqual([
-    [1],
-    [2],
-    [1],
-    [2],
-    [3],
-    [4]
+    [{x:1}],
+    [{x:2}],
+    [{x:1}],
+    [{x:2}],
+    [{x:3}],
+    [{x:4}]
   ]);
   expect(lsCleanup).toHaveBeenCalledTimes(0);
 
