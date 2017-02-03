@@ -145,7 +145,7 @@ export default class LiveSet<T> {
         observer.next = originalNext;
         const newChanges = changes.slice(changeQueueLength);
         if (newChanges.length !== 0) {
-          originalNext(newChanges);
+          originalNext.call(observer, newChanges);
         }
       };
     }
