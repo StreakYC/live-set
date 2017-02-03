@@ -18,7 +18,7 @@ test('works', async () => {
       const t = setTimeout(() => {
         controller.remove(2);
         controller.add(4);
-      }, 30);
+      }, 60);
       return () => {
         clearTimeout(t);
         lsCleanup();
@@ -37,7 +37,7 @@ test('works', async () => {
           controller.add(value*100);
           controller.add(value*1000);
           controller.remove(value*10);
-        }, 90);
+        }, 120);
         return () => {
           clearTimeout(t);
           ls2Cleanup();
@@ -55,7 +55,7 @@ test('works', async () => {
   expect(next).toHaveBeenCalledTimes(0);
   expect(error).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(0);
-  await delay(0);
+  await delay(30);
   expect(next).toHaveBeenCalledTimes(1);
   expect(error).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(0);
@@ -65,7 +65,7 @@ test('works', async () => {
   expect(error).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(0);
   expect(Array.from(ls2.values())).toEqual([30, 40]);
-  await delay(60);
+  await delay(90);
   expect(next.mock.calls.length).toBeGreaterThanOrEqual(3);
   expect(error).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(0);
