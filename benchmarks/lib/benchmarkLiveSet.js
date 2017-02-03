@@ -20,15 +20,30 @@ export default async function benchmarkLiveSet(liveSet: LiveSet<number>, control
   console.timeEnd('read');
 
   // warm up
+  // Add a dummy listener so that we don't deactivate the stream every time a
+  // new listener unsubscribes.
+  liveSet.subscribe({});
+
+  console.time('warm up first event');
   for (let i=6; i<200; i++) {
-    await new Promise(resolve => {
-      liveSet.subscribe(() => {
-        resolve();
+    await new Promise((resolve,reject) => {
+      const sub = liveSet.subscribe(() => {
+        if (i===6) {
+          console.timeEnd('warm up first event');
+          console.time('warm up finishing');
+        }
+        try {
+          sub.unsubscribe();
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
       });
       controller.add(i*2);
       controller.add(i*2+1);
     });
   }
+  console.timeEnd('warm up finishing');
 
   await new Promise(resolve => {
     console.time('changes');
