@@ -48,18 +48,23 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
                   ret = ret['@@transducer/value'];
                   addsComplete = true;
                 }
-                ret.forEach(transformedValue => {
-                  const list = inputToOutputValues.get(value);
-                  if (list) {
-                    list.push(transformedValue);
-                  } else {
-                    inputToOutputValues.set(value, [transformedValue]);
+                if (ret.length !== 0) {
+                  let list = inputToOutputValues.get(value);
+                  if (!list) {
+                    list = [];
+                    inputToOutputValues.set(value, list);
                   }
-                  controller.add(transformedValue);
-                });
-                xform['@@transducer/result']([]).forEach(endValue => {
-                  controller.add(endValue);
-                });
+                  for (let i=0, len=ret.length; i<len; i++) {
+                    const transformedValue = ret[i];
+                    list.push(transformedValue);
+                    controller.add(transformedValue);
+                  }
+                }
+                if (addsComplete) {
+                  xform['@@transducer/result']([]).forEach(endValue => {
+                    controller.add(endValue);
+                  });
+                }
               }
             } else if (change.type === 'remove') {
               const {value} = change;
