@@ -138,6 +138,18 @@ export default class LiveSet<T> {
 
     (observer: LiveSetObserver<T>);
 
+    const changeQueueLength = this._changeQueue.length;
+    const originalNext = observer.next;
+    if (changeQueueLength !== 0 && originalNext) {
+      observer.next = changes => {
+        observer.next = originalNext;
+        const newChanges = changes.slice(changeQueueLength);
+        if (newChanges.length !== 0) {
+          originalNext(newChanges);
+        }
+      };
+    }
+
     if (this._ended) {
       const subscription = {
         closed: false,

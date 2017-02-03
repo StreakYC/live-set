@@ -189,6 +189,22 @@ test('error', async () => {
   expect(sub.closed).toBe(true);
 });
 
+test("don't receive changes that already happened when subscribing", async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5]));
+  controller.remove(5);
+  controller.add(6);
+
+  expect(Array.from(liveSet.values())).toEqual([6]);
+
+  const next = jest.fn();
+  liveSet.subscribe(next);
+
+  await delay(0);
+
+  expect(next.mock.calls).toEqual([
+  ]);
+});
+
 test('subscribe, unsubscribe, subscribe', async () => {
   const listenStart = jest.fn();
   const unsub = jest.fn();
@@ -261,10 +277,6 @@ test('multiple subscribers, one immediate unsubscription', async () => {
   const sub2 = ls.subscribe(changes => {
     switch (changeHandlerCallCount++) {
     case 0:
-      expect(changes).toEqual([{type: 'add', value: 2}]);
-      expect(Array.from(ls.values())).toEqual([1,2]);
-      break;
-    case 1:
       expect(changes).toEqual([{type: 'add', value: 3}]);
       expect(Array.from(ls.values())).toEqual([1,2,3]);
       sub2.unsubscribe();
@@ -282,7 +294,7 @@ test('multiple subscribers, one immediate unsubscription', async () => {
   // The change handler should be called asynchronously
   expect(changeHandlerCallCount).toBe(0);
   await delay(40);
-  expect(changeHandlerCallCount).toBe(2);
+  expect(changeHandlerCallCount).toBe(1);
   expect(unsub).toHaveBeenCalledTimes(1);
 });
 
@@ -333,10 +345,6 @@ test('multiple subscribers', async () => {
   const sub2 = ls.subscribe(changes => {
     switch (changeHandler2CallCount++) {
     case 0:
-      expect(changes).toEqual([{type: 'add', value: 2}]);
-      expect(Array.from(ls.values())).toEqual([1,2]);
-      break;
-    case 1:
       expect(changes).toEqual([{type: 'add', value: 3}]);
       expect(Array.from(ls.values())).toEqual([1,2,3]);
       expect(sub2.closed).toBe(false);
@@ -356,6 +364,6 @@ test('multiple subscribers', async () => {
   expect(changeHandler2CallCount).toBe(0);
   await delay(40);
   expect(changeHandler1CallCount).toBe(1);
-  expect(changeHandler2CallCount).toBe(2);
+  expect(changeHandler2CallCount).toBe(1);
   expect(unsub).toHaveBeenCalledTimes(1);
 });
