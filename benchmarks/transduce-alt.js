@@ -4,14 +4,18 @@
 
 import LiveSet from '../src';
 import filter from '../src/filter';
+import map from '../src/map';
 import benchmarkLiveSet from './lib/benchmarkLiveSet';
 
 let {liveSet, controller} = LiveSet.active(new Set([1,2,3,4,5]));
 
-console.time('filter setup');
+const evens = x => x%2 === 0;
+const mapper = x => x+2;
+
+console.time('setup');
 for (let i=0; i<200; i++) {
-  liveSet = filter(liveSet, x => x%2 === 0);
+  liveSet = map(filter(liveSet, evens), mapper);
 }
-console.timeEnd('filter setup');
+console.timeEnd('setup');
 
 benchmarkLiveSet(liveSet, controller);
