@@ -14,7 +14,7 @@ export default async function benchmarkLiveSet(liveSet: LiveSet<number>, control
   }
 
   console.time('read');
-  for (let i=0; i<200; i++) {
+  for (let i=0; i<1000; i++) {
     read();
   }
   console.timeEnd('read');
@@ -37,10 +37,10 @@ export default async function benchmarkLiveSet(liveSet: LiveSet<number>, control
       console.log('change count', changes.length);
       resolve();
     });
-    for (let i=1000; i<2000; i++) {
+    for (let i=10000; i<30000; i++) {
       controller.add(i);
     }
-    for (let i=1000; i<1500; i++) {
+    for (let i=10000; i<20000; i++) {
       controller.remove(i);
     }
   });
