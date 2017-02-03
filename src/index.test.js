@@ -27,7 +27,8 @@ test('listen, subscribe', async () => {
   const unsub = jest.fn();
   const ls = new LiveSet({
     read: () => new Set([4,5]),
-    listen(c) {
+    listen(setValues, c) {
+      setValues(this.read());
       expect(c.closed).toBe(false);
       c.add(5);
       c.add(6);
@@ -54,10 +55,6 @@ test('listen, subscribe', async () => {
   const sub = ls.subscribe(changes => {
     switch (changeHandlerCallCount++) {
     case 0:
-      expect(changes).toEqual([{type: 'add', value: 6}, {type: 'add', value: 7}]);
-      expect(Array.from(ls.values())).toEqual([4,5,6,7]);
-      break;
-    case 1:
       expect(changes).toEqual([{type: 'remove', value: 5}, {type: 'add', value: 8}]);
       expect(Array.from(ls.values())).toEqual([4,6,7,8]);
       expect(sub.closed).toBe(false);
@@ -74,7 +71,7 @@ test('listen, subscribe', async () => {
   expect(changeHandlerCallCount).toBe(0);
   expect(unsub).toHaveBeenCalledTimes(0);
   await delay(40);
-  expect(changeHandlerCallCount).toBe(2);
+  expect(changeHandlerCallCount).toBe(1);
   expect(unsub).toHaveBeenCalledTimes(1);
   expect(ls.isEnded()).toBe(false);
 });
@@ -84,7 +81,8 @@ test('subscribe, end', async () => {
   const unsub = jest.fn();
   const ls = new LiveSet({
     read: () => new Set([1]),
-    listen(c) {
+    listen(setValues, c) {
+      setValues(this.read());
       expect(c.closed).toBe(false);
       listenStart();
       c.add(2);
@@ -111,9 +109,7 @@ test('subscribe, end', async () => {
   expect(Array.from(ls.values())).toEqual([1,2]);
   await delay(0);
 
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 2}]]
-  ]);
+  expect(next.mock.calls).toEqual([]);
   expect(complete).toHaveBeenCalledTimes(0);
   expect(sub.closed).toBe(false);
   expect(unsub).toHaveBeenCalledTimes(0);
@@ -122,7 +118,6 @@ test('subscribe, end', async () => {
 
   await delay(60);
   expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 2}]],
     [[{type: 'add', value: 3}]],
   ]);
   expect(complete).toHaveBeenCalledTimes(1);
@@ -210,7 +205,8 @@ test('subscribe, unsubscribe, subscribe', async () => {
   const unsub = jest.fn();
   const ls = new LiveSet({
     read: () => new Set([1]),
-    listen(c) {
+    listen(setValues, c) {
+      setValues(this.read());
       listenStart();
       c.add(2);
       let t = setTimeout(() => {
@@ -230,13 +226,10 @@ test('subscribe, unsubscribe, subscribe', async () => {
     expect(changeHandler.mock.calls).toEqual([]);
     expect(Array.from(ls.values())).toEqual([1,2]);
     await delay(1);
-    expect(changeHandler.mock.calls).toEqual([
-      [[{type: 'add', value: 2}]]
-    ]);
+    expect(changeHandler.mock.calls).toEqual([]);
     expect(Array.from(ls.values())).toEqual([1,2]);
     await delay(100);
     expect(changeHandler.mock.calls).toEqual([
-      [[{type: 'add', value: 2}]],
       [[{type: 'add', value: 3}]]
     ]);
     expect(Array.from(ls.values())).toEqual([1,2,3]);
@@ -250,7 +243,8 @@ test('multiple subscribers, one immediate unsubscription', async () => {
   const unsub = jest.fn();
   const ls = new LiveSet({
     read: () => new Set([1]),
-    listen(c) {
+    listen(setValues, c) {
+      setValues(this.read());
       listenStart();
       c.add(2);
       let t = setTimeout(() => {
@@ -303,14 +297,12 @@ test('multiple subscribers', async () => {
   const unsub = jest.fn();
   const ls = new LiveSet({
     read: () => new Set([1]),
-    listen(c) {
+    listen(setValues, c) {
+      setValues(this.read());
       listenStart();
       c.add(2);
       let t = setTimeout(() => {
         c.add(3);
-        t = setTimeout(() => {
-          throw new Error('should not happen');
-        }, 1);
       }, 1);
       return () => {
         clearTimeout(t);
@@ -326,8 +318,8 @@ test('multiple subscribers', async () => {
   const sub1 = ls.subscribe(changes => {
     switch (changeHandler1CallCount++) {
     case 0:
-      expect(changes).toEqual([{type: 'add', value: 2}]);
-      expect(Array.from(ls.values())).toEqual([1,2]);
+      expect(changes).toEqual([{type: 'add', value: 3}]);
+      expect(Array.from(ls.values())).toEqual([1,2,3]);
       expect(sub1.closed).toBe(false);
       sub1.unsubscribe();
       expect(sub1.closed).toBe(true);

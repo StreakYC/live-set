@@ -8,7 +8,8 @@ test('works', async () => {
   const ls1Cleanup = jest.fn();
   const ls1 = new LiveSet({
     read: () => new Set([{x:'1'}, {x:'one'}]),
-    listen(controller) {
+    listen(setValues, controller) {
+      setValues(this.read());
       const originalValues = Array.from(ls1.values());
       controller.add({x:'uno'});
       setTimeout(() => {
@@ -22,7 +23,8 @@ test('works', async () => {
   const ls2Cleanup = jest.fn();
   const ls2 = new LiveSet({
     read: () => new Set([{x:'2'}, {x:'two'}]),
-    listen(controller) {
+    listen(setValues, controller) {
+      setValues(this.read());
       const originalValues = Array.from(ls2.values());
       controller.add({x:'dos'});
       setTimeout(() => {
@@ -42,11 +44,11 @@ test('works', async () => {
 
   await delay(60);
 
-  expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'2'}, {x:'two'}, {x:'uno'}, {x:'dos'}, {x:'ten'}]);
+  expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'uno'}, {x:'2'}, {x:'two'}, {x:'dos'}, {x:'ten'}]);
 
   await delay(60);
 
-  expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'two'}, {x:'uno'}, {x:'dos'}, {x:'ten'}, {x:'twenty'}]);
+  expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'uno'}, {x:'two'}, {x:'dos'}, {x:'ten'}, {x:'twenty'}]);
 
   expect(next.mock.calls.length).toBeGreaterThanOrEqual(2);
   expect(error).toHaveBeenCalledTimes(0);

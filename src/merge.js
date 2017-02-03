@@ -13,7 +13,8 @@ export default function merge<T>(liveSets: Array<LiveSet<T>>): LiveSet<T> {
       });
       return s;
     },
-    listen(controller) {
+    listen(setValues, controller) {
+      const initialValues = new Set();
       const subs = new Set();
       let doneSubscribing = false;
       liveSets.forEach(liveSet => {
@@ -42,7 +43,13 @@ export default function merge<T>(liveSets: Array<LiveSet<T>>): LiveSet<T> {
             }
           }
         });
+        liveSet.values().forEach(value => {
+          initialValues.add(value);
+        });
       });
+
+      setValues(initialValues);
+
       doneSubscribing = true;
       if (subs.size === 0) {
         controller.end();

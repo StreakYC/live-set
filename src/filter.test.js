@@ -8,7 +8,8 @@ test('works', async () => {
   const lsCleanup = jest.fn();
   const ls = new LiveSet({
     read: () => new Set([{x:1}, {x:2}]),
-    listen(controller) {
+    listen(setValues, controller) {
+      setValues(this.read());
       const originalValues = Array.from(ls.values());
       controller.add({x:3});
       setTimeout(() => {

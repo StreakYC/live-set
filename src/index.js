@@ -18,7 +18,10 @@ export type LiveSetController<T> = {
 
 export type LiveSetInit<T> = {
   read(): Set<T>;
-  listen(controller: LiveSetController<T>): ?{unsubscribe():void}|()=>void;
+  listen(
+    setValues: { (values: Set<T>): void },
+    controller: LiveSetController<T>
+  ): ?{unsubscribe():void}|()=>void;
 };
 
 export type LiveSetSubscriber<T> = (changes: Array<LiveSetChangeRecord<T>>) => void;
@@ -36,8 +39,7 @@ export type LiveSetObserver<T> = {
 };
 
 export default class LiveSet<T> {
-  _read: () => Set<T>;
-  _listen: (controller: LiveSetController<T>) => ?{unsubscribe():void}|()=>void;
+  _init: LiveSetInit<T>;
 
   _values: ?Set<T> = null;
   _activeController: ?LiveSetController<T> = null;
@@ -50,8 +52,7 @@ export default class LiveSet<T> {
   _observers: Array<LiveSetObserver<T>> = [];
 
   constructor(init: LiveSetInit<T>) {
-    this._read = init.read;
-    this._listen = init.listen;
+    this._init = init;
   }
 
   static active<T>(initialValues: ?Set<T>): {liveSet: LiveSet<T>, controller: LiveSetController<T>} {
@@ -59,7 +60,8 @@ export default class LiveSet<T> {
     let controller;
     const liveSet = new LiveSet({
       read: () => set,
-      listen: _controller => {
+      listen: (setValues, _controller) => {
+        setValues(set);
         controller = _controller;
       }
     });
@@ -114,7 +116,7 @@ export default class LiveSet<T> {
     if (this._values) {
       return new Set(this._values);
     } else {
-      return this._read();
+      return this._init.read();
     }
   }
 
@@ -137,18 +139,6 @@ export default class LiveSet<T> {
     }
 
     (observer: LiveSetObserver<T>);
-
-    const changeQueueLength = this._changeQueue.length;
-    const originalNext = observer.next;
-    if (changeQueueLength !== 0 && originalNext) {
-      observer.next = changes => {
-        observer.next = originalNext;
-        const newChanges = changes.slice(changeQueueLength);
-        if (newChanges.length !== 0) {
-          originalNext.call(observer, newChanges);
-        }
-      };
-    }
 
     if (this._ended) {
       const subscription = {
@@ -188,19 +178,22 @@ export default class LiveSet<T> {
     }
     // Check that they haven't immediately unsubscribed
     if (this._observers[this._observers.length-1] === observer && !this._activeController) {
-      const values = this._values = this._read();
       const controller: LiveSetController<T> = this._activeController = {
         // Flow doesn't support getters and setters yet
         /*:: closed: false&&` */ get closed() {
           return liveSet._activeController !== this;
         }/*:: ` */,
         add: value => {
+          const values = this._values;
+          if (!values) throw new Error('setValue must be called before controller is used');
           if (!this._ended && !values.has(value)) {
             values.add(value);
             this._queueChange({type: 'add', value});
           }
         },
         remove: value => {
+          const values = this._values;
+          if (!values) throw new Error('setValue must be called before controller is used');
           if (!this._ended && values.has(value)) {
             values.delete(value);
             this._queueChange({type: 'remove', value});
@@ -221,7 +214,17 @@ export default class LiveSet<T> {
           this._deactivate();
         }
       };
-      const cleanup = this._listen(controller);
+      const setValuesError = () => {
+        throw new Error('setValues must be called once during listen');
+      };
+      let setValues = values => {
+        setValues = setValuesError;
+        this._values = values;
+      };
+      const cleanup = this._init.listen(values => setValues(values), controller);
+      if (!this._values) {
+        setValuesError();
+      }
       if (cleanup != null) {
         if (typeof cleanup.unsubscribe === 'function') {
           this._listenCleanup = () => {
@@ -237,6 +240,19 @@ export default class LiveSet<T> {
         }
       }
     }
+
+    const changeQueueLength = this._changeQueue.length;
+    const originalNext = observer.next;
+    if (changeQueueLength !== 0 && originalNext) {
+      observer.next = changes => {
+        observer.next = originalNext;
+        const newChanges = changes.slice(changeQueueLength);
+        if (newChanges.length !== 0) {
+          originalNext.call(observer, newChanges);
+        }
+      };
+    }
+
     return subscription;
   }
 }

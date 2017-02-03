@@ -4,21 +4,18 @@ import LiveSet from '.';
 import type {LiveSetSubscription} from '.';
 
 export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => LiveSet<U>): LiveSet<U> {
-  const childSets: Map<T, LiveSet<U>> = new Map();
   return new LiveSet({
     read() {
-      childSets.clear();
       const s = new Set();
       liveSet.values().forEach(value => {
         const childSet = cb(value);
-        childSets.set(value, childSet);
         childSet.values().forEach(value => {
           s.add(value);
         });
       });
       return s;
     },
-    listen(controller) {
+    listen(setValues, controller) {
       let mainSubCompleted = false;
       const childSetSubs: Map<LiveSet<U>, LiveSetSubscription> = new Map();
 
@@ -48,8 +45,6 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           }
         });
       }
-
-      childSets.forEach(childSetSubscribe);
 
       const mainSub = liveSet.subscribe({
         next(changes) {
@@ -85,6 +80,20 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           }
         }
       });
+
+      const childSets: Map<T, LiveSet<U>> = new Map();
+      {
+        const initialValues = new Set();
+        liveSet.values().forEach(value => {
+          const childSet = cb(value);
+          childSets.set(value, childSet);
+          childSetSubscribe(childSet, value);
+          childSet.values().forEach(value => {
+            initialValues.add(value);
+          });
+        });
+        setValues(initialValues);
+      }
 
       return () => {
         mainSub.unsubscribe();
