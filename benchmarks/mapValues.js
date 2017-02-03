@@ -27,9 +27,22 @@ for (let i=0; i<200; i++) {
 }
 console.timeEnd('read');
 
-console.time('changes');
-ls.subscribe(changes => {
-  console.timeEnd('changes');
-  console.log('changes', changes);
-});
-controller.add(6);
+(async function() {
+  for (let i=6; i<200; i++) {
+    await new Promise(resolve => {
+      ls.subscribe(() => {
+        resolve();
+      });
+      controller.add(i);
+    });
+  }
+
+  console.time('changes');
+  ls.subscribe(changes => {
+    console.timeEnd('changes');
+    console.log('change count', changes.length);
+  });
+  for (let i=200; i<700; i++) {
+    controller.add(i);
+  }
+})();
