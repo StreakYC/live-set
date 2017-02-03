@@ -78,7 +78,8 @@ export default class LiveSet<T> {
         const changes = this._changeQueue;
         this._changeQueue = [];
         let observersToCall;
-        if (this._ended) {
+        const ended = this._ended;
+        if (ended) {
           observersToCall = this._observers;
           this._observers = [];
         } else {
@@ -88,7 +89,7 @@ export default class LiveSet<T> {
           if (observer.next) {
             observer.next(changes);
           }
-          if (this._ended) {
+          if (ended) {
             if (this._endedWithError) {
               if (observer.error) observer.error(this._error);
             } else {
