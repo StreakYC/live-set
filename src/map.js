@@ -7,11 +7,13 @@ export default function map<T,U>(liveSet: LiveSet<T>, cb: (value: T) => U): Live
   return new LiveSet({
     read: () => {
       m.clear();
-      return new Set(Array.from(liveSet.values()).map(value => {
+      const s = new Set();
+      liveSet.values().forEach(value => {
         const newValue = cb(value);
         m.set(value, newValue);
-        return newValue;
-      }));
+        s.add(newValue);
+      });
+      return s;
     },
     listen: controller => liveSet.subscribe({
       next(changes) {
