@@ -32,7 +32,10 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
         }
         result = ret;
       }
-      return new Set(xform['@@transducer/result'](result));
+      if (addsComplete) {
+        result = xform['@@transducer/result'](result);
+      }
+      return new Set(result);
     },
     listen(controller) {
       const inputToOutputValues: Map<any, Array<any>> = new Map();
