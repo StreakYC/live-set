@@ -54,10 +54,17 @@ export default function merge<T>(liveSets: Array<LiveSet<T>>): LiveSet<T> {
       if (subs.size === 0) {
         controller.end();
       }
-      return () => {
-        subs.forEach(sub => {
-          sub.unsubscribe();
-        });
+      return {
+        unsubscribe() {
+          subs.forEach(sub => {
+            sub.unsubscribe();
+          });
+        },
+        pullChanges() {
+          subs.forEach(sub => {
+            sub.pullChanges();
+          });
+        }
       };
     }
   });

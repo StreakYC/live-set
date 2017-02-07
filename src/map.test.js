@@ -34,9 +34,9 @@ test('works', async () => {
 
   await delay(60);
 
-  // expect(Array.from(mappedLs.values())).toEqual([
-  //   {m:'one'}, {m:'uno'}, {m:'ten'}
-  // ]);
+  expect(Array.from(mappedLs.values())).toEqual([
+    {m:'one'}, {m:'uno'}, {m:'ten'}
+  ]);
   expect(mapper.mock.calls).toEqual([
     [{x:'1'}],
     [{x:'one'}],
@@ -51,4 +51,18 @@ test('works', async () => {
   await delay(0);
 
   expect(lsCleanup).toHaveBeenCalledTimes(1);
+});
+
+test('read behavior consistent while stream is active or inactive', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+  const mappedLs = map(liveSet, x => x*10);
+
+  expect(Array.from(mappedLs.values())).toEqual([50,60]);
+  controller.add(7);
+  expect(Array.from(mappedLs.values())).toEqual([50,60,70]);
+  mappedLs.subscribe({});
+  controller.add(8);
+  expect(Array.from(mappedLs.values())).toEqual([50,60,70,80]);
+  await delay(0);
+  expect(Array.from(mappedLs.values())).toEqual([50,60,70,80]);
 });

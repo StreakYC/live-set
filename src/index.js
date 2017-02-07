@@ -16,12 +16,17 @@ export type LiveSetController<T> = {
   end(): void;
 };
 
+export type ListenHandler = {
+  unsubscribe(): void;
+  +pullChanges?: () => void;
+};
+
 export type LiveSetInit<T> = {
   read(): Set<T>;
   listen(
     setValues: { (values: Set<T>): void },
     controller: LiveSetController<T>
-  ): ?{unsubscribe():void}|()=>void;
+  ): ?ListenHandler|()=>void;
 };
 
 export type LiveSetSubscriber<T> = (changes: Array<LiveSetChangeRecord<T>>) => void;
@@ -29,6 +34,7 @@ export type LiveSetSubscriber<T> = (changes: Array<LiveSetChangeRecord<T>>) => v
 export type LiveSetSubscription = {
   closed: boolean;
   unsubscribe(): void;
+  pullChanges(): void;
 };
 
 export type LiveSetObserver<T> = {
@@ -38,18 +44,25 @@ export type LiveSetObserver<T> = {
   complete?: ?() => void;
 };
 
+type LiveSetObserverRecord<T> = {
+  ignore: number;
+  observer: LiveSetObserver<T>;
+};
+
 export default class LiveSet<T> {
   _init: LiveSetInit<T>;
 
   _values: ?Set<T> = null;
-  _activeController: ?LiveSetController<T> = null;
-  _listenCleanup: ?()=>void = null;
+  _active: ?{
+    controller: LiveSetController<T>;
+    listenHandler: ListenHandler;
+  } = null;
   _ended: boolean = false;
   _endedWithError: boolean = false;
   _error: any = null;
   _queuedCall: boolean = false;
   _changeQueue: Array<LiveSetChangeRecord<T>> = [];
-  _observers: Array<LiveSetObserver<T>> = [];
+  _observers: Array<LiveSetObserverRecord<T>> = [];
 
   constructor(init: LiveSetInit<T>) {
     this._init = init;
@@ -87,9 +100,19 @@ export default class LiveSet<T> {
         } else {
           observersToCall = this._observers.slice();
         }
-        observersToCall.forEach(observer => {
-          if (observer.next) {
-            observer.next(changes);
+        observersToCall.forEach(record => {
+          const {observer, ignore} = record;
+          const observerNext = observer.next;
+          if (observerNext) {
+            if (ignore === 0) {
+              observerNext.call(observer, changes);
+            } else {
+              record.ignore = 0;
+              const changesToDeliver = changes.slice(ignore);
+              if (changesToDeliver.length) {
+                observerNext.call(observer, changes);
+              }
+            }
           }
           if (ended) {
             if (this._endedWithError) {
@@ -104,17 +127,24 @@ export default class LiveSet<T> {
   }
 
   _deactivate() {
-    this._activeController = null;
-    const listenCleanup = this._listenCleanup;
-    if (listenCleanup) {
-      this._listenCleanup = null;
-      listenCleanup();
+    if (!this._active) throw new Error('already inactive');
+    const {listenHandler} = this._active;
+    this._active = null;
+    if (listenHandler) {
+      listenHandler.unsubscribe();
     }
   }
 
   values(): Set<T> {
     if (this._values) {
-      return new Set(this._values);
+      const values = this._values;
+      if (this._active) {
+        const {listenHandler} = this._active;
+        if (listenHandler.pullChanges) {
+          listenHandler.pullChanges();
+        }
+      }
+      return new Set(values);
     } else {
       return this._init.read();
     }
@@ -145,7 +175,8 @@ export default class LiveSet<T> {
         closed: false,
         unsubscribe: () => {
           subscription.closed = true;
-        }
+        },
+        pullChanges: () => {}
       };
       if (observer.start) {
         observer.start(subscription);
@@ -157,18 +188,30 @@ export default class LiveSet<T> {
       return subscription;
     }
 
-    this._observers.push(observer);
+    const observerRecord = {observer, ignore: this._changeQueue.length};
+    this._observers.push(observerRecord);
     const subscription = {
       /*:: closed: false&&` */ get closed() {
-        return liveSet._observers.indexOf(observer) < 0;
+        return liveSet._observers.indexOf(observerRecord) < 0;
       }/*:: ` */,
       unsubscribe: () => {
-        const ix = this._observers.indexOf(observer);
+        const ix = this._observers.indexOf(observerRecord);
         if (ix >= 0) {
           this._observers.splice(ix, 1);
-          if (this._observers.length === 0) {
+          if (!this._ended && this._observers.length === 0) {
             this._values = null;
             this._deactivate();
+          }
+        }
+      },
+      pullChanges: () => {
+        const changeQueueLength = this._changeQueue.length;
+        const originalNext = observer.next;
+        if (changeQueueLength !== 0 && originalNext) {
+          const changesToDeliver = this._changeQueue.slice(observerRecord.ignore);
+          if (changesToDeliver.length !== 0) {
+            observerRecord.ignore = changeQueueLength;
+            originalNext.call(observer, changesToDeliver);
           }
         }
       }
@@ -177,11 +220,11 @@ export default class LiveSet<T> {
       observer.start(subscription);
     }
     // Check that they haven't immediately unsubscribed
-    if (this._observers[this._observers.length-1] === observer && !this._activeController) {
-      const controller: LiveSetController<T> = this._activeController = {
+    if (this._observers[this._observers.length-1] === observerRecord && !this._active) {
+      const controller: LiveSetController<T> = {
         // Flow doesn't support getters and setters yet
         /*:: closed: false&&` */ get closed() {
-          return liveSet._activeController !== this;
+          return !liveSet._active || liveSet._active.controller !== this;
         }/*:: ` */,
         add: value => {
           const values = this._values;
@@ -214,6 +257,12 @@ export default class LiveSet<T> {
           this._deactivate();
         }
       };
+      const active = this._active = {
+        controller,
+        listenHandler: {
+          unsubscribe: () => {}
+        }
+      };
       const setValuesError = () => {
         throw new Error('setValues must be called once during listen');
       };
@@ -221,36 +270,24 @@ export default class LiveSet<T> {
         setValues = setValuesError;
         this._values = values;
       };
-      const cleanup = this._init.listen(values => setValues(values), controller);
+      const listenHandlerOrFunction = this._init.listen(values => setValues(values), controller);
       if (!this._values) {
         setValuesError();
       }
-      if (cleanup != null) {
-        if (typeof cleanup.unsubscribe === 'function') {
-          this._listenCleanup = () => {
-            cleanup.unsubscribe();
-          };
-        } else if (typeof cleanup !== 'function') {
-          throw new TypeError('listen must return null or a function');
-        } else {
-          this._listenCleanup = (cleanup:any);
-        }
-        if (controller.closed) {
-          this._deactivate();
-        }
+      observerRecord.ignore = this._changeQueue.length;
+      if (typeof listenHandlerOrFunction === 'function') {
+        active.listenHandler = {
+          unsubscribe: listenHandlerOrFunction
+        };
+      } else if (listenHandlerOrFunction != null && typeof listenHandlerOrFunction.unsubscribe === 'function') {
+        active.listenHandler = listenHandlerOrFunction;
+      } else if (listenHandlerOrFunction != null) {
+        throw new TypeError('listen must return object with unsubscribe method, a function, or null');
       }
-    }
-
-    const changeQueueLength = this._changeQueue.length;
-    const originalNext = observer.next;
-    if (changeQueueLength !== 0 && originalNext) {
-      observer.next = changes => {
-        observer.next = originalNext;
-        const newChanges = changes.slice(changeQueueLength);
-        if (newChanges.length !== 0) {
-          originalNext.call(observer, newChanges);
-        }
-      };
+      if (controller.closed) {
+        this._active = active;
+        this._deactivate();
+      }
     }
 
     return subscription;

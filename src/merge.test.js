@@ -64,3 +64,18 @@ test('works', async () => {
   expect(ls1Cleanup).toHaveBeenCalledTimes(1);
   expect(ls2Cleanup).toHaveBeenCalledTimes(1);
 });
+
+test('read behavior consistent while stream is active or inactive', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([1,2]));
+  const {liveSet: liveSet2} = LiveSet.active(new Set([5,6]));
+  const mergedLs = merge([liveSet, liveSet2]);
+
+  expect(Array.from(mergedLs.values())).toEqual([1,2,5,6]);
+  controller.add(3);
+  expect(Array.from(mergedLs.values())).toEqual([1,2,3,5,6]);
+  mergedLs.subscribe({});
+  controller.add(4);
+  expect(Array.from(mergedLs.values())).toEqual([1,2,3,5,6,4]);
+  await delay(0);
+  expect(Array.from(mergedLs.values())).toEqual([1,2,3,5,6,4]);
+});

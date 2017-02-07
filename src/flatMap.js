@@ -95,12 +95,20 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
         setValues(initialValues);
       }
 
-      return () => {
-        mainSub.unsubscribe();
-        childSetSubs.forEach(sub => {
-          sub.unsubscribe();
-        });
-        childSets.clear();
+      return {
+        unsubscribe() {
+          mainSub.unsubscribe();
+          childSetSubs.forEach(sub => {
+            sub.unsubscribe();
+          });
+          childSets.clear();
+        },
+        pullChanges() {
+          mainSub.pullChanges();
+          childSetSubs.forEach(sub => {
+            sub.pullChanges();
+          });
+        }
       };
     }
   });

@@ -119,3 +119,17 @@ test('listen', async () => {
   expect(sub.closed).toBe(true);
   expect(tls.isEnded()).toBe(true);
 });
+
+test('read behavior consistent while stream is active or inactive', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+  const mappedLs = transduce(liveSet, t.map(x => x*10));
+
+  expect(Array.from(mappedLs.values())).toEqual([50,60]);
+  controller.add(7);
+  expect(Array.from(mappedLs.values())).toEqual([50,60,70]);
+  mappedLs.subscribe({});
+  controller.add(8);
+  expect(Array.from(mappedLs.values())).toEqual([50,60,70,80]);
+  await delay(0);
+  expect(Array.from(mappedLs.values())).toEqual([50,60,70,80]);
+});

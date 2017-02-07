@@ -51,3 +51,19 @@ test('works', async () => {
 
   expect(lsCleanup).toHaveBeenCalledTimes(1);
 });
+
+test('read behavior consistent while stream is active or inactive', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+  const filteredLs = filter(liveSet, x => x%2 === 0);
+
+  expect(Array.from(filteredLs.values())).toEqual([6]);
+  controller.add(7);
+  controller.add(8);
+  expect(Array.from(filteredLs.values())).toEqual([6,8]);
+  filteredLs.subscribe({});
+  controller.add(9);
+  controller.add(10);
+  expect(Array.from(filteredLs.values())).toEqual([6,8,10]);
+  await delay(0);
+  expect(Array.from(filteredLs.values())).toEqual([6,8,10]);
+});

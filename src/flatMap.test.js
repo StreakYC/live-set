@@ -79,7 +79,9 @@ test('works', async () => {
   expect(ls2Cleanup).toHaveBeenCalledTimes(1);
 
   controllers.slice(0, -1).forEach(controller => {
-    controller.end();
+    if (!controller.closed) {
+      controller.end();
+    }
   });
   await delay(0);
 
@@ -114,4 +116,34 @@ test('handles removal of initial values', async () => {
   controller.remove(5);
   await delay(0);
   expect(Array.from(fls.values())).toEqual([{x: 6}]);
+});
+
+test('read behavior consistent while stream is active or inactive', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+
+  let subControllers = [];
+  const fmLs = flatMap(liveSet, x => new LiveSet({
+    read: () => new Set([x*10]),
+    listen(setValues, controller) {
+      setValues(this.read());
+      subControllers.push(controller);
+      return () => {
+        subControllers = subControllers.filter(c => c !== controller);
+      };
+    }
+  }));
+
+  expect(Array.from(fmLs.values())).toEqual([50,60]);
+  controller.add(7);
+  expect(Array.from(fmLs.values())).toEqual([50,60,70]);
+  fmLs.subscribe({});
+  controller.add(8);
+  expect(Array.from(fmLs.values())).toEqual([50,60,70,80]);
+  await delay(0);
+  expect(Array.from(fmLs.values())).toEqual([50,60,70,80]);
+
+  subControllers[0].add(101);
+  expect(Array.from(fmLs.values())).toEqual([50,60,70,80,101]);
+  await delay(0);
+  expect(Array.from(fmLs.values())).toEqual([50,60,70,80,101]);
 });

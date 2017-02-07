@@ -65,6 +65,7 @@ test('listen, subscribe', async () => {
       throw new Error(`Should not happen. ${changeHandlerCallCount}`);
     }
   });
+  expect(sub.closed).toBe(false);
   // The listen function should run immediately
   expect(Array.from(ls.values())).toEqual([4,5,6,7]);
   // The change handler should be called asynchronously
@@ -358,4 +359,110 @@ test('multiple subscribers', async () => {
   expect(changeHandler1CallCount).toBe(1);
   expect(changeHandler2CallCount).toBe(1);
   expect(unsub).toHaveBeenCalledTimes(1);
+});
+
+test('immediate end', async () => {
+  const liveSet = new LiveSet({
+    read: () => new Set([5,6]),
+    listen(setValues, controller) {
+      setValues(this.read());
+      controller.add(7);
+      controller.end();
+    }
+  });
+  const next = jest.fn(), complete = jest.fn();
+  liveSet.subscribe({next, complete});
+  expect(next.mock.calls).toEqual([]);
+  expect(complete).toHaveBeenCalledTimes(0);
+  await delay(0);
+  expect(next.mock.calls).toEqual([]);
+  expect(complete).toHaveBeenCalledTimes(1);
+});
+
+test('pullChanges', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+  const next = jest.fn(), next2 = jest.fn();
+  const sub = liveSet.subscribe(next);
+  liveSet.subscribe(next2);
+  controller.add(7);
+  expect(next.mock.calls).toEqual([
+  ]);
+  expect(next2.mock.calls).toEqual([
+  ]);
+  sub.pullChanges();
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  expect(next2.mock.calls).toEqual([
+  ]);
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  expect(next2.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  controller.add(8);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  expect(next2.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]],
+    [[{type: 'add', value: 8}]]
+  ]);
+  expect(next2.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]],
+    [[{type: 'add', value: 8}]]
+  ]);
+});
+
+test('pullChanges and ignoring already-delivered values', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5]));
+  const next = jest.fn();
+  controller.add(6);
+  const sub = liveSet.subscribe(next);
+  controller.add(7);
+  expect(next.mock.calls).toEqual([
+  ]);
+  sub.pullChanges();
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  controller.add(8);
+  controller.add(9);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]],
+    [[{type: 'add', value: 8}, {type: 'add', value: 9}]],
+  ]);
+});
+
+test('values() triggers pullChanges()', () => {
+  const ls = new LiveSet({
+    read: () => new Set([5,6]),
+    listen(setValues, controller) {
+      setValues(this.read());
+      return {
+        unsubscribe() {},
+        pullChanges() {
+          controller.add(7);
+        }
+      };
+    }
+  });
+
+  expect(Array.from(ls.values())).toEqual([5,6]);
+  ls.subscribe({});
+  expect(Array.from(ls.values())).toEqual([5,6,7]);
 });
