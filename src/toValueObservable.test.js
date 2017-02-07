@@ -17,24 +17,23 @@ test('works', async () => {
     }
   });
 
-  const cb = jest.fn();
+  const next = jest.fn();
 
-
-  const sub = toValueObservable(liveSet).subscribe(cb);
+  const sub = toValueObservable(liveSet).subscribe(next);
 
   if (!controller) throw new Error();
   controller.add(7);
 
-  expect(cb.mock.calls.map(x => x[0].value)).toEqual([5,6]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6]);
   await delay(0);
-  expect(cb.mock.calls.map(x => x[0].value)).toEqual([5,6,7]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6,7]);
   controller.add(8);
-  expect(cb.mock.calls.map(x => x[0].value)).toEqual([5,6,7]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6,7]);
   await delay(0);
-  expect(cb.mock.calls.map(x => x[0].value)).toEqual([5,6,7,8]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6,7,8]);
 
   const removal6 = jest.fn();
-  cb.mock.calls[1][0].removal.then(removal6);
+  next.mock.calls[1][0].removal.then(removal6);
 
   controller.remove(6);
   controller.remove(7);
@@ -43,7 +42,7 @@ test('works', async () => {
   expect(removal6.mock.calls).toEqual([[undefined]]);
 
   const removal7 = jest.fn();
-  cb.mock.calls[2][0].removal.then(removal7);
+  next.mock.calls[2][0].removal.then(removal7);
 
   await delay(0);
   expect(removal7.mock.calls).toEqual([[undefined]]);
@@ -54,10 +53,10 @@ test('works', async () => {
   expect(sub.closed).toBe(true);
   expect(cleanup).toHaveBeenCalledTimes(1);
 
-  expect(cb.mock.calls.map(x => x[0].value)).toEqual([5,6,7,8]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6,7,8]);
 
   const removal8 = jest.fn();
-  cb.mock.calls[3][0].removal.then(removal8);
+  next.mock.calls[3][0].removal.then(removal8);
 
   await delay(0);
   expect(removal8.mock.calls).toEqual([[undefined]]);
