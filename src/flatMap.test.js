@@ -147,3 +147,20 @@ test('read behavior consistent while stream is active or inactive', async () => 
   await delay(0);
   expect(Array.from(fmLs.values())).toEqual([50,60,70,80,101]);
 });
+
+test('handle constant', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+  const fmLs = flatMap(liveSet, x => LiveSet.constant(new Set([x, x*10])));
+  expect(Array.from(fmLs.values())).toEqual([5,50,6,60]);
+
+  const next = jest.fn();
+  fmLs.subscribe(next);
+  expect(Array.from(fmLs.values())).toEqual([5,50,6,60]);
+
+  controller.add(7);
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}, {type: 'add', value: 70}]]
+  ]);
+  expect(Array.from(fmLs.values())).toEqual([5,50,6,60,7,70]);
+});
