@@ -82,6 +82,12 @@ export default class LiveSet<T> {
     return {liveSet, controller: (controller: any)};
   }
 
+  static constant<T>(values: Set<T>): LiveSet<T> {
+    const {liveSet, controller} = LiveSet.active(values);
+    controller.end();
+    return liveSet;
+  }
+
   _queueChange(record: ?LiveSetChangeRecord<T>) {
     if (record) {
       this._changeQueue.push(record);

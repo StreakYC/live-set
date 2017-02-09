@@ -466,3 +466,21 @@ test('values() triggers pullChanges()', () => {
   ls.subscribe({});
   expect(Array.from(ls.values())).toEqual([5,6,7]);
 });
+
+test('constant', async () => {
+  const ls = LiveSet.constant(new Set([5,6,7]));
+  expect(ls.isEnded()).toBe(true);
+  expect(Array.from(ls.values())).toEqual([5,6,7]);
+  const start = jest.fn(), next = jest.fn(), error = jest.fn(), complete = jest.fn();
+  const sub = ls.subscribe({start, next, error, complete});
+  expect(sub.closed).toBe(true);
+  expect(start).toHaveBeenCalledTimes(1);
+  expect(next).toHaveBeenCalledTimes(0);
+  expect(error).toHaveBeenCalledTimes(0);
+  expect(complete).toHaveBeenCalledTimes(1);
+  await delay(0);
+  expect(start).toHaveBeenCalledTimes(1);
+  expect(next).toHaveBeenCalledTimes(0);
+  expect(error).toHaveBeenCalledTimes(0);
+  expect(complete).toHaveBeenCalledTimes(1);
+});
