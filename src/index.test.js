@@ -484,3 +484,17 @@ test('constant', async () => {
   expect(error).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(1);
 });
+
+test('immediate unsubscribe from ended liveset', async () => {
+  const ls = LiveSet.constant(new Set([5,6,7]));
+  const next = jest.fn(), error = jest.fn(), complete = jest.fn();
+  const sub = ls.subscribe({start: sub => sub.unsubscribe(), next, error, complete});
+  expect(sub.closed).toBe(true);
+  expect(next).toHaveBeenCalledTimes(0);
+  expect(error).toHaveBeenCalledTimes(0);
+  expect(complete).toHaveBeenCalledTimes(0);
+  await delay(0);
+  expect(next).toHaveBeenCalledTimes(0);
+  expect(error).toHaveBeenCalledTimes(0);
+  expect(complete).toHaveBeenCalledTimes(0);
+});
