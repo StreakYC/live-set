@@ -52,10 +52,10 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
             if (change.type === 'add') {
               const childSet = cb(change.value);
               childSets.set(change.value, childSet);
+              childSetSubscribe(childSet, change.value);
               childSet.values().forEach(value => {
                 controller.add(value);
               });
-              childSetSubscribe(childSet, change.value);
             } else if (change.type === 'remove') {
               const childSet = childSets.get(change.value);
               if (!childSet) throw new Error('removed value not in liveset');
