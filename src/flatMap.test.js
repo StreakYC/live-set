@@ -1,8 +1,11 @@
 /* @flow */
 
 import flatMap from './flatMap';
+
 import LiveSet from '.';
 import delay from 'pdelay';
+import transduce from './transduce';
+import t from 'transducers.js';
 
 test('works', async () => {
   const controllers = [];
@@ -163,4 +166,32 @@ test('handle constant', async () => {
     [[{type: 'add', value: 7}, {type: 'add', value: 70}]]
   ]);
   expect(Array.from(fmLs.values())).toEqual([5,50,6,60,7,70]);
+});
+
+test('recursive pool', async () => {
+  const {liveSet: sources, controller: sourcesController} = LiveSet.active();
+  const fmLs = flatMap(sources, s => s);
+  const s1 = LiveSet.constant(new Set([1, 2, 3, 4]));
+  sourcesController.add(s1);
+  expect(Array.from(fmLs.values())).toEqual([1, 2, 3, 4]);
+  const s2 = transduce(fmLs, t.compose(
+    t.filter(x => x < 1000),
+    t.filter(x => x%2 === 0),
+    t.map(x => x*10+1)
+  ));
+  sourcesController.add(s2);
+  const s3 = transduce(fmLs, t.compose(
+    t.filter(x => x < 1000),
+    t.filter(x => x%2 === 1),
+    t.map(x => x*10)
+  ));
+  sourcesController.add(s3);
+
+  expect(() => fmLs.values()).toThrowError(
+    'reading inactive recursively-flatMapped stream is not supported'
+  );
+
+  const next = jest.fn();
+  fmLs.subscribe({next});
+  expect(Array.from(fmLs.values())).toEqual([1, 2, 3, 4, 21, 41, 10, 30, 210, 410, 101, 301, 2101, 4101, 1010, 3010]);
 });

@@ -4,8 +4,14 @@ import LiveSet from '.';
 import type {LiveSetSubscription} from '.';
 
 export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => LiveSet<U>): LiveSet<U> {
+  let isReading = false;
+
   return new LiveSet({
     read() {
+      if (isReading) {
+        throw new Error('reading inactive recursively-flatMapped stream is not supported');
+      }
+      isReading = true;
       const s = new Set();
       liveSet.values().forEach(value => {
         const childSet = cb(value);
@@ -13,10 +19,12 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           s.add(value);
         });
       });
+      isReading = false;
       return s;
     },
     listen(setValues, controller) {
       let mainSubCompleted = false;
+      let nextHasFired = false;
       const childSetSubs: Map<LiveSet<U>, LiveSetSubscription> = new Map();
 
       function childSetSubscribe(childSet: LiveSet<U>, value: T) {
@@ -25,6 +33,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
             childSetSubs.set(childSet, sub);
           },
           next(changes) {
+            nextHasFired = true;
             changes.forEach(change => {
               if (change.type === 'add') {
                 controller.add(change.value);
@@ -48,6 +57,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
 
       const mainSub = liveSet.subscribe({
         next(changes) {
+          nextHasFired = true;
           changes.forEach(change => {
             if (change.type === 'add') {
               const childSet = cb(change.value);
@@ -81,20 +91,19 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
         }
       });
 
-      const childSets: Map<T, LiveSet<U>> = new Map();
-      {
-        const initialValues = new Set();
-        liveSet.values().forEach(value => {
-          const childSet = cb(value);
-          childSets.set(value, childSet);
-          childSetSubscribe(childSet, value);
-          childSet.values().forEach(value => {
-            initialValues.add(value);
-          });
-        });
-        setValues(initialValues);
-      }
+      setValues(new Set());
 
+      const childSets: Map<T, LiveSet<U>> = new Map();
+      liveSet.values().forEach(value => {
+        const childSet = cb(value);
+        childSets.set(value, childSet);
+        childSetSubscribe(childSet, value);
+        childSet.values().forEach(value => {
+          controller.add(value);
+        });
+      });
+
+      let isPullingChanges = false;
       return {
         unsubscribe() {
           mainSub.unsubscribe();
@@ -104,10 +113,18 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           childSets.clear();
         },
         pullChanges() {
-          mainSub.pullChanges();
-          childSetSubs.forEach(sub => {
-            sub.pullChanges();
-          });
+          if (isPullingChanges) return;
+          isPullingChanges = true;
+
+          do {
+            nextHasFired = false;
+            mainSub.pullChanges();
+            childSetSubs.forEach(sub => {
+              sub.pullChanges();
+            });
+          } while (nextHasFired);
+
+          isPullingChanges = false;
         }
       };
     }

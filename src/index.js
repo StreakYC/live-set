@@ -18,7 +18,7 @@ export type LiveSetController<T> = {
 
 export type ListenHandler = {
   unsubscribe(): void;
-  +pullChanges?: () => void;
+  +pullChanges?: ?() => void;
 };
 
 export type LiveSetInit<T> = {
@@ -152,6 +152,9 @@ export default class LiveSet<T> {
       }
       return new Set(values);
     } else {
+      if (this._active) {
+        throw new Error('tried to call values() on liveset during subscription before setValues was called');
+      }
       return this._init.read();
     }
   }
@@ -211,6 +214,10 @@ export default class LiveSet<T> {
         }
       },
       pullChanges: () => {
+        if (!this._active) throw new Error('pullChanges on inactive stream');
+        if (this._active.listenHandler && this._active.listenHandler.pullChanges) {
+          this._active.listenHandler.pullChanges();
+        }
         const changeQueueLength = this._changeQueue.length;
         const originalNext = observer.next;
         if (changeQueueLength !== 0 && originalNext) {
@@ -226,7 +233,7 @@ export default class LiveSet<T> {
       observer.start(subscription);
     }
     // Check that they haven't immediately unsubscribed
-    if (this._observers[this._observers.length-1] === observerRecord && !this._active) {
+    if (!this._active && !subscription.closed) {
       const controller: LiveSetController<T> = {
         // Flow doesn't support getters and setters yet
         /*:: closed: false&&` */ get closed() {
