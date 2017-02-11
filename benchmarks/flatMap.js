@@ -10,7 +10,12 @@ let {liveSet, controller} = LiveSet.active(new Set([1,2,3,4,5]));
 
 const flatMapFn = x => {
   const s = new Set([x+1]);
-  return new LiveSet({read: () => s, listen: () => {}});
+  return new LiveSet({
+    read: () => s,
+    listen(setValues) {
+      setValues(s);
+    }
+  });
 };
 
 console.time('setup');
