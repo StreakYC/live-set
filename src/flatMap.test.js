@@ -215,4 +215,28 @@ test('ended input liveset', async () => {
   expect(next).toHaveBeenCalledTimes(0);
   sub.pullChanges();
   expect(next).toHaveBeenCalledTimes(1);
+  expect(Array.from(fmLs.values())).toEqual([5, 123]);
+});
+
+test('input liveset ends after', async () => {
+  const {liveSet: input, controller: inputController} = LiveSet.active(new Set([5]));
+  let controller;
+  const fmLs = flatMap(input, x => new LiveSet({
+    read: () => new Set([x]),
+    listen(setValues, _controller) {
+      setValues(this.read());
+      controller = _controller;
+    }
+  }));
+  const next = jest.fn();
+  expect(controller).toBe(undefined);
+  const sub = fmLs.subscribe(next);
+  inputController.end();
+  expect(fmLs.isEnded()).toBe(false);
+  if (!controller) throw new Error();
+  controller.add(123);
+  expect(next).toHaveBeenCalledTimes(0);
+  sub.pullChanges();
+  expect(next).toHaveBeenCalledTimes(1);
+  expect(Array.from(fmLs.values())).toEqual([5, 123]);
 });

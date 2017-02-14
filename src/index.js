@@ -214,8 +214,7 @@ export default class LiveSet<T> {
         }
       },
       pullChanges: () => {
-        if (!this._active) throw new Error('pullChanges on inactive stream');
-        if (this._active.listenHandler && this._active.listenHandler.pullChanges) {
+        if (this._active && this._active.listenHandler && this._active.listenHandler.pullChanges) {
           this._active.listenHandler.pullChanges();
         }
         const changeQueueLength = this._changeQueue.length;
