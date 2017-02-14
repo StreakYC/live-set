@@ -24,6 +24,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
     },
     listen(setValues, controller) {
       let mainSubCompleted = false;
+      let hasSubscribedToChildren = false;
       let nextHasFired = false;
       const childSetSubs: Map<LiveSet<U>, LiveSetSubscription> = new Map();
 
@@ -85,7 +86,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
         },
         complete() {
           mainSubCompleted = true;
-          if (childSetSubs.size === 0) {
+          if (hasSubscribedToChildren && childSetSubs.size === 0) {
             controller.end();
           }
         }
@@ -102,6 +103,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           controller.add(value);
         });
       });
+      hasSubscribedToChildren = true;
 
       let isPullingChanges = false;
       return {

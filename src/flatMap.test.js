@@ -195,3 +195,24 @@ test('recursive pool', async () => {
   fmLs.subscribe({next});
   expect(Array.from(fmLs.values())).toEqual([1, 2, 3, 4, 21, 41, 10, 30, 210, 410, 101, 301, 2101, 4101, 1010, 3010]);
 });
+
+test('ended input liveset', async () => {
+  const input = LiveSet.constant(new Set([5]));
+  let controller;
+  const fmLs = flatMap(input, x => new LiveSet({
+    read: () => new Set([x]),
+    listen(setValues, _controller) {
+      setValues(this.read());
+      controller = _controller;
+    }
+  }));
+  const next = jest.fn();
+  expect(controller).toBe(undefined);
+  const sub = fmLs.subscribe(next);
+  expect(fmLs.isEnded()).toBe(false);
+  if (!controller) throw new Error();
+  controller.add(123);
+  expect(next).toHaveBeenCalledTimes(0);
+  sub.pullChanges();
+  expect(next).toHaveBeenCalledTimes(1);
+});
