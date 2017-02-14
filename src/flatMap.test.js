@@ -22,7 +22,7 @@ test('works', async () => {
       const t = setTimeout(() => {
         controller.remove(2);
         controller.add(4);
-      }, 60);
+      }, 30);
       return () => {
         clearTimeout(t);
         lsCleanup();
