@@ -63,7 +63,9 @@ test('works', async () => {
 
   await delay(60);
 
-  expect(next).toHaveBeenCalledTimes(1);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'remove', value: 20}, {type: 'add', value: 40}]]
+  ]);
   expect(error).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(0);
   expect(Array.from(ls2.values())).toEqual([30, 40]);
