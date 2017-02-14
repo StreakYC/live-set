@@ -80,22 +80,19 @@ test('listen, subscribe', async () => {
 test('subscribe, end', async () => {
   const listenStart = jest.fn();
   const unsub = jest.fn();
+
+  let controller;
+
   const ls = new LiveSet({
     read: () => new Set([1]),
     listen(setValues, c) {
       setValues(this.read());
+      controller = c;
       expect(c.closed).toBe(false);
       listenStart();
       c.add(2);
-      let t = setTimeout(() => {
-        expect(c.closed).toBe(false);
-        c.add(3);
-        c.end();
-        expect(c.closed).toBe(true);
-      }, 30);
       return () => {
         expect(c.closed).toBe(true);
-        clearTimeout(t);
         unsub();
       };
     }
@@ -106,6 +103,7 @@ test('subscribe, end', async () => {
   const next = jest.fn();
   const complete = jest.fn();
   const sub = ls.subscribe(next, null, complete);
+  if (!controller) throw new Error();
   expect(next.mock.calls).toEqual([]);
   expect(Array.from(ls.values())).toEqual([1,2]);
   await delay(0);
@@ -117,7 +115,12 @@ test('subscribe, end', async () => {
   expect(Array.from(ls.values())).toEqual([1,2]);
   expect(ls.isEnded()).toBe(false);
 
-  await delay(60);
+  expect(controller.closed).toBe(false);
+  controller.add(3);
+  controller.end();
+  expect(controller.closed).toBe(true);
+  await delay(0); // Let async callbacks fire
+
   expect(next.mock.calls).toEqual([
     [[{type: 'add', value: 3}]],
   ]);
