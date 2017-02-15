@@ -19,14 +19,7 @@ test('works', async () => {
 
       controller.remove(1);
       controller.add(3);
-      const t = setTimeout(() => {
-        controller.remove(2);
-        controller.add(4);
-      }, 30);
-      return () => {
-        clearTimeout(t);
-        lsCleanup();
-      };
+      return lsCleanup;
     }
   });
 
@@ -61,7 +54,9 @@ test('works', async () => {
   expect(error).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(0);
 
-  await delay(60);
+  controllers[0].remove(2);
+  controllers[0].add(4);
+  await delay(0); // Let promises resolve
 
   expect(next.mock.calls).toEqual([
     [[{type: 'remove', value: 20}, {type: 'add', value: 40}]]
