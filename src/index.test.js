@@ -451,6 +451,29 @@ test('pullChanges and ignoring already-delivered values', async () => {
   ]);
 });
 
+test('ignore events from listen callback', async () => {
+  let controller;
+  const ls = new LiveSet({
+    read: () => new Set([1,2]),
+    listen(setValues, _controller) {
+      setValues(this.read());
+      controller = _controller;
+      controller.remove(1);
+      controller.add(3);
+    }
+  });
+  const next = jest.fn();
+  ls.subscribe(next);
+  if (!controller) throw new Error();
+  expect(Array.from(ls.values())).toEqual([2, 3]);
+  expect(next).toHaveBeenCalledTimes(0);
+  controller.remove(2);
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'remove', value: 2}]]
+  ]);
+});
+
 test('values() triggers pullChanges()', () => {
   const ls = new LiveSet({
     read: () => new Set([5,6]),

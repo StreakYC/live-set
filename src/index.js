@@ -116,7 +116,7 @@ export default class LiveSet<T> {
               record.ignore = 0;
               const changesToDeliver = changes.slice(ignore);
               if (changesToDeliver.length) {
-                observerNext.call(observer, changes);
+                observerNext.call(observer, changesToDeliver);
               }
             }
           }
