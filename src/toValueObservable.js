@@ -24,6 +24,12 @@ export default function toValueObservable<T>(liveSet: LiveSet<T>) {
     }
 
     const sub = liveSet.subscribe({
+      start(sub) {
+        for (let value of liveSet.values()) {
+          if (sub.closed) break;
+          addedItem(value);
+        }
+      },
       next(changes) {
         changes.forEach(change => {
           if (change.type === 'add') {
@@ -40,11 +46,6 @@ export default function toValueObservable<T>(liveSet: LiveSet<T>) {
         observer.complete();
       }
     });
-
-    for (let value of liveSet.values()) {
-      if (sub.closed) break;
-      addedItem(value);
-    }
 
     return () => {
       sub.unsubscribe();

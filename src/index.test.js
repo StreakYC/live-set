@@ -524,3 +524,48 @@ test('immediate unsubscribe from ended liveset', async () => {
   expect(error).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(0);
 });
+
+test('changes triggered by first values call should not be re-delivered', async () => {
+  let valueToAddInPull = {x: 1};
+  const ls = new LiveSet({
+    read() {
+      throw new Error();
+    },
+    listen(setValues, controller) {
+      setValues(new Set());
+      return {
+        unsubscribe() {},
+        pullChanges() {
+          if (valueToAddInPull != null) {
+            controller.add(valueToAddInPull);
+            valueToAddInPull = null;
+          }
+        }
+      };
+    }
+  });
+
+  const next = jest.fn();
+  ls.subscribe({
+    start() {
+      expect(Array.from(ls.values())).toEqual([{x: 1}]);
+    },
+    next
+  });
+  await delay(0);
+  expect(next.mock.calls).toEqual([]);
+
+  valueToAddInPull = {x: 2};
+  const next2 = jest.fn();
+  ls.subscribe({
+    start() {
+      expect(Array.from(ls.values())).toEqual([{x: 1}, {x: 2}]);
+    },
+    next: next2
+  });
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: {x: 2}}]]
+  ]);
+  expect(next2.mock.calls).toEqual([]);
+});

@@ -12,7 +12,17 @@ export default function map<T,U>(liveSet: LiveSet<T>, cb: (value: T) => U): Live
       return s;
     },
     listen(setValues, controller) {
+      const m: Map<T,U> = new Map();
+      const s = new Set();
+
       const sub = liveSet.subscribe({
+        start() {
+          liveSet.values().forEach(value => {
+            const newValue = cb(value);
+            m.set(value, newValue);
+            s.add(newValue);
+          });
+        },
         next(changes) {
           changes.forEach(change => {
             if (change.type === 'add') {
@@ -35,13 +45,6 @@ export default function map<T,U>(liveSet: LiveSet<T>, cb: (value: T) => U): Live
         }
       });
 
-      const m: Map<T,U> = new Map();
-      const s = new Set();
-      liveSet.values().forEach(value => {
-        const newValue = cb(value);
-        m.set(value, newValue);
-        s.add(newValue);
-      });
       setValues(s);
 
       return sub;

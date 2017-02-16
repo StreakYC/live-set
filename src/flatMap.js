@@ -32,6 +32,9 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
         childSet.subscribe({
           start(sub) {
             childSetSubs.set(childSet, sub);
+            childSet.values().forEach(value => {
+              controller.add(value);
+            });
           },
           next(changes) {
             nextHasFired = true;
@@ -64,9 +67,6 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
               const childSet = cb(change.value);
               childSets.set(change.value, childSet);
               childSetSubscribe(childSet, change.value);
-              childSet.values().forEach(value => {
-                controller.add(value);
-              });
             } else if (change.type === 'remove') {
               const childSet = childSets.get(change.value);
               if (!childSet) throw new Error('removed value not in liveset');
@@ -99,9 +99,6 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
         const childSet = cb(value);
         childSets.set(value, childSet);
         childSetSubscribe(childSet, value);
-        childSet.values().forEach(value => {
-          controller.add(value);
-        });
       });
       hasSubscribedToChildren = true;
 
@@ -113,6 +110,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
             sub.unsubscribe();
           });
           childSets.clear();
+          childSetSubs.clear();
         },
         pullChanges() {
           if (isPullingChanges) return;

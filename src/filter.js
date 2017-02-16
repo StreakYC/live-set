@@ -14,7 +14,18 @@ export default function filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): L
       return ret;
     },
     listen(setValues, controller) {
+      const passedFilter = new Set();
+      const initialValues = new Set();
+
       const sub = liveSet.subscribe({
+        start() {
+          liveSet.values().forEach(value => {
+            if (cb(value)) {
+              passedFilter.add(value);
+              initialValues.add(value);
+            }
+          });
+        },
         next(changes) {
           changes.forEach(change => {
             if (change.type === 'add') {
@@ -38,17 +49,7 @@ export default function filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): L
         }
       });
 
-      const passedFilter = new Set();
-      {
-        const s = new Set();
-        liveSet.values().forEach(value => {
-          if (cb(value)) {
-            passedFilter.add(value);
-            s.add(value);
-          }
-        });
-        setValues(s);
-      }
+      setValues(initialValues);
 
       return sub;
     }

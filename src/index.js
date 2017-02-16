@@ -190,20 +190,34 @@ export default class LiveSet<T> {
       if (observer.start) {
         observer.start(subscription);
       }
-      if (!subscription.closed && observer.complete) {
-        observer.complete();
+      if (!subscription.closed) {
+        if (this._endedWithError) {
+          if (observer.error) {
+            observer.error(this._error);
+          }
+        } else {
+          if (observer.complete) {
+            observer.complete();
+          }
+        }
       }
       subscription.closed = true;
       return subscription;
     }
 
     const observerRecord = {observer, ignore: this._changeQueue.length};
-    this._observers.push(observerRecord);
+
+    let isStarting = true;
+    let unsubscribedInStart = false;
     const subscription = {
       /*:: closed: false&&` */ get closed() {
-        return liveSet._observers.indexOf(observerRecord) < 0;
+        return !isStarting && liveSet._observers.indexOf(observerRecord) < 0;
       }/*:: ` */,
       unsubscribe: () => {
+        if (isStarting) {
+          unsubscribedInStart = true;
+          return;
+        }
         const ix = this._observers.indexOf(observerRecord);
         if (ix >= 0) {
           this._observers.splice(ix, 1);
@@ -228,11 +242,8 @@ export default class LiveSet<T> {
         }
       }
     };
-    if (observer.start) {
-      observer.start(subscription);
-    }
-    // Check that they haven't immediately unsubscribed
-    if (!this._active && !subscription.closed) {
+
+    if (!this._active) {
       const controller: LiveSetController<T> = {
         // Flow doesn't support getters and setters yet
         /*:: closed: false&&` */ get closed() {
@@ -286,7 +297,6 @@ export default class LiveSet<T> {
       if (!this._values) {
         setValuesError();
       }
-      observerRecord.ignore = this._changeQueue.length;
       if (typeof listenHandlerOrFunction === 'function') {
         active.listenHandler = {
           unsubscribe: listenHandlerOrFunction
@@ -300,6 +310,16 @@ export default class LiveSet<T> {
         this._active = active;
         this._deactivate();
       }
+    }
+
+    if (observer.start) {
+      observer.start(subscription);
+    }
+    isStarting = false;
+
+    observerRecord.ignore = this._changeQueue.length;
+    if (!unsubscribedInStart) {
+      this._observers.push(observerRecord);
     }
 
     return subscription;

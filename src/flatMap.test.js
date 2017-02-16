@@ -5,6 +5,7 @@ import flatMap from './flatMap';
 import LiveSet from '.';
 import delay from 'pdelay';
 import transduce from './transduce';
+import map from './map';
 import t from 'transducers.js';
 
 test('works', async () => {
@@ -191,6 +192,87 @@ test('recursive pool', async () => {
   const next = jest.fn();
   fmLs.subscribe({next});
   expect(Array.from(fmLs.values())).toEqual([1, 2, 3, 4, 21, 41, 10, 30, 210, 410, 101, 301, 2101, 4101, 1010, 3010]);
+});
+
+test('add in pullChanges is not double-counted in pool', async () => {
+  const {liveSet: s1, controller: c1} = LiveSet.active();
+  const fm1 = flatMap(s1, s => s);
+
+  const fm1Next = jest.fn();
+  fm1.subscribe(fm1Next);
+
+  const foo = new LiveSet({
+    read() {
+      throw new Error();
+    },
+    listen(setValues, controller) {
+      setValues(new Set([]));
+      let hasPulled = false;
+      return {
+        unsubscribe() {},
+        pullChanges() {
+          if (!hasPulled) {
+            hasPulled = true;
+            controller.add({original: 5});
+          }
+        }
+      };
+    }
+  });
+
+  const fooMapper = jest.fn(x => ({transformed: x}));
+  c1.add(map(foo, fooMapper));
+
+  expect(fooMapper.mock.calls).toEqual([]);
+  expect(fm1Next.mock.calls).toEqual([]);
+
+  await delay(0);
+
+  expect(fooMapper.mock.calls).toEqual([
+    [{original: 5}]
+  ]);
+  expect(fm1Next.mock.calls).toEqual([
+    [[{type: 'add', value: {transformed: {original: 5}}}]]
+  ]);
+});
+
+test('two dependent recursive pools', () => {
+  const {liveSet: s1, controller: c1} = LiveSet.active();
+  const {liveSet: s2, controller: c2} = LiveSet.active();
+  const fm1 = flatMap(s1, s => s);
+  const fm2 = flatMap(s2, s => s);
+
+  const output1Mapper = jest.fn(x => x);
+  const output1 = map(fm1, output1Mapper);
+  const sub1Next = jest.fn();
+  const sub1 = output1.subscribe(sub1Next);
+  const sub2Next = jest.fn();
+  const sub2 = fm2.subscribe(sub2Next);
+
+  const fm2Mapper = jest.fn(x => ({transformed: x}));
+  c1.add(map(fm2, fm2Mapper));
+  c2.add(LiveSet.constant(new Set([{original: 5}])));
+
+  expect(fm2Mapper.mock.calls).toEqual([]);
+  expect(output1Mapper.mock.calls).toEqual([]);
+  expect(sub1Next.mock.calls).toEqual([]);
+  expect(sub2Next.mock.calls).toEqual([]);
+
+  sub1.pullChanges();
+  sub2.pullChanges();
+
+  expect(fm2Mapper.mock.calls).toEqual([
+    [{original: 5}]
+  ]);
+  expect(output1Mapper.mock.calls).toEqual([
+    [{transformed: {original: 5}}]
+  ]);
+  expect(sub1Next.mock.calls).toEqual([
+    [[{type: 'add', value: {transformed: {original: 5}}}]]
+  ]);
+  expect(sub2Next.mock.calls).toEqual([
+    [[{type: 'add', value: {original: 5}}]]
+  ]);
 });
 
 test('ended input liveset', async () => {

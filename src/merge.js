@@ -23,6 +23,9 @@ export default function merge<T>(liveSets: Array<LiveSet<T>>): LiveSet<T> {
           start(_sub) {
             sub = _sub;
             subs.add(sub);
+            liveSet.values().forEach(value => {
+              initialValues.add(value);
+            });
           },
           next(changes) {
             changes.forEach(change => {
@@ -42,9 +45,6 @@ export default function merge<T>(liveSets: Array<LiveSet<T>>): LiveSet<T> {
               controller.end();
             }
           }
-        });
-        liveSet.values().forEach(value => {
-          initialValues.add(value);
         });
       });
 
