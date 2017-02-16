@@ -59,7 +59,18 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
         });
       }
 
+      setValues(new Set());
+      const childSets: Map<T, LiveSet<U>> = new Map();
+
       const mainSub = liveSet.subscribe({
+        start() {
+          liveSet.values().forEach(value => {
+            const childSet = cb(value);
+            childSets.set(value, childSet);
+            childSetSubscribe(childSet, value);
+          });
+          hasSubscribedToChildren = true;
+        },
         next(changes) {
           nextHasFired = true;
           changes.forEach(change => {
@@ -91,16 +102,6 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           }
         }
       });
-
-      setValues(new Set());
-
-      const childSets: Map<T, LiveSet<U>> = new Map();
-      liveSet.values().forEach(value => {
-        const childSet = cb(value);
-        childSets.set(value, childSet);
-        childSetSubscribe(childSet, value);
-      });
-      hasSubscribedToChildren = true;
 
       let isPullingChanges = false;
       return {
