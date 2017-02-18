@@ -15,16 +15,17 @@ export default function filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): L
     },
     listen(setValues, controller) {
       const passedFilter = new Set();
-      const initialValues = new Set();
 
       const sub = liveSet.subscribe({
         start() {
+          const initialValues = new Set();
           liveSet.values().forEach(value => {
             if (cb(value)) {
               passedFilter.add(value);
               initialValues.add(value);
             }
           });
+          setValues(initialValues);
         },
         next(changes) {
           changes.forEach(change => {
@@ -48,8 +49,6 @@ export default function filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): L
           controller.end();
         }
       });
-
-      setValues(initialValues);
 
       return sub;
     }

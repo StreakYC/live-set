@@ -70,11 +70,11 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
   return new LiveSet({
     read: () => valuesAndContext().values,
     listen(setValues, controller) {
-      let initialValues, inputToOutputValues, xform, addsComplete;
+      let inputToOutputValues, xform, addsComplete;
       const sub = liveSet.subscribe({
         start() {
           const ret = valuesAndContext();
-          initialValues = ret.values;
+          setValues(ret.values);
           inputToOutputValues = ret.inputToOutputValues;
           xform = ret.xform;
           addsComplete = ret.addsComplete;
@@ -115,9 +115,6 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
           controller.end();
         }
       });
-
-      if (!initialValues) throw new Error();
-      setValues(initialValues);
 
       return sub;
     }
