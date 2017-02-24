@@ -67,3 +67,9 @@ test('read behavior consistent while stream is active or inactive', async () => 
   await delay(0);
   expect(Array.from(filteredLs.values())).toEqual([6,8,10]);
 });
+
+test('filter by Boolean', () => {
+  const ls: LiveSet<?number> = LiveSet.constant(new Set([5,null,7]));
+  const filteredLs: LiveSet<number> = filter(ls, Boolean);
+  expect(Array.from(filteredLs.values())).toEqual([5,7]);
+});
