@@ -28,7 +28,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
       let nextHasFired = false;
       const childSetSubs: Map<LiveSet<U>, LiveSetSubscription> = new Map();
 
-      function childSetSubscribe(childSet: LiveSet<U>, value: T) {
+      function childSetSubscribe(childSet: LiveSet<U>) {
         childSet.subscribe({
           start(sub) {
             childSetSubs.set(childSet, sub);
@@ -66,7 +66,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           liveSet.values().forEach(value => {
             const childSet = cb(value);
             childSets.set(value, childSet);
-            childSetSubscribe(childSet, value);
+            childSetSubscribe(childSet);
           });
           hasSubscribedToChildren = true;
         },
@@ -76,7 +76,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
             if (change.type === 'add') {
               const childSet = cb(change.value);
               childSets.set(change.value, childSet);
-              childSetSubscribe(childSet, change.value);
+              childSetSubscribe(childSet);
             } else if (change.type === 'remove') {
               const childSet = childSets.get(change.value);
               if (!childSet) throw new Error('removed value not in liveset');
