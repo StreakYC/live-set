@@ -51,7 +51,6 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           },
           complete() {
             childSetSubs.delete(childSet);
-            childSets.delete(value);
             if (mainSubCompleted && childSetSubs.size === 0) {
               controller.end();
             }
@@ -81,14 +80,16 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
             } else if (change.type === 'remove') {
               const childSet = childSets.get(change.value);
               if (!childSet) throw new Error('removed value not in liveset');
-              const childSetSub = childSetSubs.get(childSet);
-              if (!childSetSub) throw Error('childSet was not subscribed to');
               childSet.values().forEach(value => {
                 controller.remove(value);
               });
-              childSetSub.unsubscribe();
-              childSetSubs.delete(childSet);
               childSets.delete(change.value);
+              const childSetSub = childSetSubs.get(childSet);
+              if (childSetSub) {
+                // We won't have the subscription if the childSet ended already
+                childSetSub.unsubscribe();
+                childSetSubs.delete(childSet);
+              }
             }
           });
         },

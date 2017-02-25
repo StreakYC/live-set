@@ -164,6 +164,14 @@ test('handle constant', async () => {
     [[{type: 'add', value: 7}, {type: 'add', value: 70}]]
   ]);
   expect(Array.from(fmLs.values())).toEqual([5,50,6,60,7,70]);
+
+  controller.remove(5);
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}, {type: 'add', value: 70}]],
+    [[{type: 'remove', value: 5}, {type: 'remove', value: 50}]]
+  ]);
+  expect(Array.from(fmLs.values())).toEqual([6,60,7,70]);
 });
 
 test('recursive pool', async () => {
