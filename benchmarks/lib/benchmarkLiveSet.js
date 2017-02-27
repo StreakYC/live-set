@@ -3,21 +3,23 @@
 
 import type LiveSet, {LiveSetController} from '../../src';
 
-export default async function benchmarkLiveSet(liveSet: LiveSet<number>, controller: LiveSetController<number>, itemsToInsert: number=20000) {
+export default async function benchmarkLiveSet(liveSet: LiveSet<any>, controller: LiveSetController<number>, itemsToInsert: number=20000, skipReads: boolean=false) {
   function read() {
     return liveSet.values();
   }
 
-  // warm up
-  for (let i=0; i<2000; i++) {
-    read();
-  }
+  if (!skipReads) {
+    // warm up
+    for (let i=0; i<2000; i++) {
+      read();
+    }
 
-  console.time('read');
-  for (let i=0; i<1000; i++) {
-    read();
+    console.time('read');
+    for (let i=0; i<1000; i++) {
+      read();
+    }
+    console.timeEnd('read');
   }
-  console.timeEnd('read');
 
   // warm up
   // Add a dummy listener so that we don't deactivate the stream every time a
