@@ -83,9 +83,16 @@ export default class LiveSet<T> {
   }
 
   static constant<T>(values: Set<T>): LiveSet<T> {
-    const {liveSet, controller} = LiveSet.active(values);
-    controller.end();
-    return liveSet;
+    const shouldNotHappen = () => {
+      throw new Error('Should not happen');
+    };
+    const ls = new LiveSet({
+      read: shouldNotHappen,
+      listen: shouldNotHappen
+    });
+    ls._ended = true;
+    ls._values = values;
+    return ls;
   }
 
   _queueChange(record: ?LiveSetChangeRecord<T>) {
