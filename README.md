@@ -249,29 +249,138 @@ console.log(firstValue1 === firstValue2); // true
 #### LiveSet::constructor
 `LiveSet<T>::constructor({read, listen})`
 
+The constructor must be passed an object containing `read` and `listen`
+functions.
+
+The `read` function is called if the values() method is called on the LiveSet
+instance while it is inactive but not yet ended. The `read` function is
+expected to return a Set object containing the LiveSet's current values. If a
+LiveSet is not intended to be read while inactive, then you should give a
+function which throws an error.
+
+The `listen` function is called whenever the LiveSet is activated. Activation
+occurs whenever the LiveSet goes from zero to one subscribers. Activation may
+happen multiple times for a LiveSet if it is unsubscribed from and resubscribed
+to. The `listen` function is passed two parameters, `setValues` and
+`controller`.
+
+`setValues` is a function that must be called with the initial values as a Set
+before the passed `listen` function ends and before any new subscriptions are
+added to the LiveSet being activated.
+
+`controller` is an object with three methods, `add(value)`, `remove(value)`,
+`error(error: any)` and `end()`. These are to be used to modify the LiveSet's
+values. Do not modify the Set originally passed to `setValues` to manipulate the
+LiveSet. `end()` may be called to signify that the LiveSet will have no more
+changes; the LiveSet will become frozen with its current values at that point.
+References to subscribers will be released when a LiveSet is ended. The `error`
+function ends the LiveSet and delivers an error value to any current
+subscribers.
+
+The `listen` function may return a function to call upon deactivation, or an
+object with an `unsubscribe` method (to call upon deactivation) and optionally
+a `pullChanges` method. The pullChanges method will be called to flush any
+changes from the source when the `values()` method is called on the LiveSet, or
+the `pullChanges` method is called on a LiveSetSubscription. If the `listen`
+function subscribes to a LiveSet, then it may be useful to have the `listen`
+function return the LiveSetSubscription, which has unsubscribe and pullChanges
+methods.
+
 #### LiveSet.constant
 `LiveSet.constant<T>(values: Set<T>): LiveSet<T>`
+
+This creates a LiveSet with a set of values that will never change. The LiveSet
+will start in the ended state, and therefore will never deliver change
+notifications or keep references to subscribers.
 
 #### LiveSet.active
 `LiveSet.active<T>(initialValues?: Set<T>): {liveSet: LiveSet<T>, controller: LiveSetController<T>}`
 
+This is a convenience method to create a LiveSet that starts out in the
+activated state and never exits the activated state. The new LiveSet and its
+controller (the same type as passed to the `listen` callback passed to the
+constructor) are returned.
+
+Be warned that this function eschews the normal activation/deactivation
+lifecycle of LiveSets. If the LiveSet requires some resource to be held open to
+keep it populated, then you will not be able to auto-close the resource when
+the LiveSet loses its subscribers. You will have to provide your own mechanism
+to close the resource manually if necessary.
+
+This function is inspired by the nonstandard "Promise.defer()" function that
+some Promise libraries have implemented.
+
 #### LiveSet::isEnded
 `LiveSet<T>::isEnded(): boolean`
+
+This returns whether the LiveSet is in the ended state. LiveSets in the ended
+state will never have their values change, deliver any change notifications, or
+keep references to their subscribers.
 
 #### LiveSet::values
 `LiveSet<T>::values(): Set<T>`
 
+This returns a Set containing all of the LiveSet's current values at the time
+of the method call. If the LiveSet is modified, then previously-returned Set
+objects will not include the modifications. The Set object return by the
+values() method must not be modified.
+
+If the LiveSet is currently inactive, then this will trigger the `read`
+function passed to the constructor to be called. If the LiveSet is currently
+active, then this will trigger the `pullChanges` function returned by the
+constructor's `listen` function if present.
+
 #### LiveSet::subscribe
 `LiveSet<T>::subscribe(observer): LiveSetSubscription`
+
+This function is used to subscribe to change notifications from the LiveSet.
+The observer parameter must either be an Observer object with optional `start`,
+`next`, `error`, and `complete` functions, or a function which is treated as an
+Observer object with that function as the `next` method. The subscribe method
+returns a LiveSetSubscription object.
+
+The `start` function is called when the subscription first starts, before the
+subscribe call has returned, and it is passed a reference to the
+LiveSetSubscription object which will be returned. During the `start` function,
+the LiveSet being subscribed to is guaranteed to be active, so it's a good time
+to read the current values of the LiveSet with the values() method.
+
+The `next` function is called after any changes have been made to the LiveSet's
+set of values. These changes notifications are delivered either asynchronously,
+or whenever change notifications are flushed early due to a `LiveSet::values()`
+or `LiveSetSubscription::pullChanges()` call.
+
+The `error` function is called if the LiveSet is ended by a call to
+`controller.error`, and it's passed the value passed to the `controller.error`
+method.
+
+The `complete` function is called if the LiveSet is ended by a call to
+`controller.end`.
+
+If either the `error` or `complete` function is called, then there will be no
+more calls to any of the observer's functions after that.
+
+This function is intended to be compatible with the Observable subscribe method
+of the [Observable proposal](https://tc39.github.io/proposal-observable/).
 
 #### LiveSetSubscription::closed
 `LiveSetSubscription::closed: boolean`
 
+This is true if the LiveSet has ended, or the subscription has been
+unsubscribed from.
+
 #### LiveSetSubscription::unsubscribe
 `LiveSetSubscription::unsubscribe(): void`
 
+This immediately unsubscribes the subscription. None of the observer functions
+will be called after unsubscription.
+
 #### LiveSetSubscription::pullChanges
 `LiveSetSubscription::pullChanges(): void`
+
+This will cause any queued change notifications to be immediately flushed to
+this subscription's observer's `next` function. This will not affect other
+subscriptions to the LiveSet.
 
 ### Transformations
 
