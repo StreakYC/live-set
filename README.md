@@ -1,5 +1,8 @@
 # live-set
 
+[![Circle CI](https://circleci.com/gh/StreakYC/live-set.svg?style=shield)](https://circleci.com/gh/StreakYC/live-set)
+[![npm version](https://badge.fury.io/js/live-set.svg)](https://badge.fury.io/js/live-set)
+
 This class represents a set of values which may change over time or have
 transformations applied to it, resulting in a new LiveSet. After modifications
 are made, notifications will be delivered asynchronously, like Javascript
@@ -297,3 +300,8 @@ used have to be included in a javascript bundle built for browsers.
 
 #### live-set/toValueObservable
 `toValueObservable<T>(liveSet: LiveSet<T>): Observable<{value: T, removal: Promise<void>}>`
+
+## Types
+
+[Flow](https://flowtype.org/) type declarations for this module are included!
+If you are using Flow, they won't require any configuration to use.
