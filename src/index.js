@@ -157,7 +157,7 @@ export default class LiveSet<T> {
           listenHandler.pullChanges();
         }
       }
-      return new Set(values);
+      return this._ended ? values : new Set(values);
     } else {
       if (this._active) {
         throw new Error('tried to call values() on liveset during subscription before setValues was called');
