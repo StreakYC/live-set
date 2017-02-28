@@ -392,23 +392,87 @@ used have to be included in a javascript bundle built for browsers.
 #### live-set/filter
 `filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): LiveSet<T>`
 
+This creates a LiveSet that contains only the values of the input `liveSet`
+for which they given callback function returns a truthy value for.
+
 #### live-set/map
 `map<T,U>(liveSet: LiveSet<T>, cb: (value: T) => U): LiveSet<U>`
+
+This creates a LiveSet that contains the result of `cb(value)` for each value
+in the input `liveSet` instead of the original values. The callback will only
+be called for the initial values and when values are added; the callback will
+not be called when a value is removed.
+
+The behavior is undefined if the callback returns the same value for distinct
+input values present in the input `liveSet` at the same time.
 
 #### live-set/transduce
 `transduce(liveSet: LiveSet<any>, transducer: Function): LiveSet<any>`
 
+This creates a new LiveSet based on a transformation implemented by the given
+transducer function. It supports any transducers implementation that follows
+[the transducer protocol](https://github.com/cognitect-labs/transducers-js#the-transducer-protocol),
+for example
+[jlongster/transducers.js](https://github.com/jlongster/transducers.js)
+or
+[cognitect-labs/transducers-js](https://github.com/cognitect-labs/transducers-js).
+To learn more about transducers please visit those libraries' pages.
+
+Transducers are recommended to be used to replace any sequence of multiple map
+or filter function calls. The use of transducers removes the need for
+intermediate LiveSets to be created.
+
+Note that each input value from the `liveSet` passed to the transducer is
+expected to immediately map to zero or more values. This mapping is remembered
+so that if the input value is later removed from the input `liveSet`, then the
+associated output values are all removed from the output LiveSet. This is fine
+for any combination of common transducers such as `map(cb)`, `filter(cb)`, and
+`take(n)`, but transducers which produce a many-to-one relationship between
+values such as `partition(n)` will not function in a sensible manner.
+
+The behavior is undefined if the transducer outputs equal values to be present
+in the output LiveSet at the same time.
+
 #### live-set/merge
 `merge<T>(liveSets: Array<LiveSet<T>>): LiveSet<T>`
+
+This function takes an array of LiveSets and returns a single LiveSet
+containing all of their values.
+
+The behavior is undefined if multiple input LiveSets contain the same value at
+the same time.
 
 #### live-set/flatMap
 `flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => LiveSet<U>): LiveSet<U>`
 
+This function calls the given callback function for each value in the input
+`liveSet`, and merges the values of all returned LiveSets into one LiveSet.
+When a new value is added to the input `liveSet`, then the callback will be
+called a new LiveSet's values will be merged in. When a value is removed from
+the input `liveSet`, then the values from the LiveSet created for that value
+will be removed from the output LiveSet.
+
+The behavior is undefined if any of the LiveSets returned by the callback
+contain equal values at the same time.
+
 #### live-set/mapWithRemoval
 `mapWithRemoval<T,U>(input: LiveSet<T>, cb: (value: T, removal: Promise<void>) => U): LiveSet<U>`
 
+This is similar to the live-set/map function, but the callback is also passed a
+promise that will resolve when the value is removed from the input `liveSet`.
+The LiveSet returned by this function may not have `values()` called on it
+while it is inactive.
+
+The behavior is undefined if the callback returns the same value for distinct
+input values present in the input `liveSet` at the same time.
+
 #### live-set/toValueObservable
 `toValueObservable<T>(liveSet: LiveSet<T>): Observable<{value: T, removal: Promise<void>}>`
+
+This will return an [Observable](https://tc39.github.io/proposal-observable/)
+instance which upon subscription will emit a `{value, removal}` object for
+every `value` currently in the input `liveSet` where `removal` is a Promise
+which will resolve after the `value` is removed from the input `liveSet`.
 
 ## Types
 
