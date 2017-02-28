@@ -29,33 +29,39 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
       const childSetSubs: Map<LiveSet<U>, LiveSetSubscription> = new Map();
 
       function childSetSubscribe(childSet: LiveSet<U>) {
-        childSet.subscribe({
-          start(sub) {
-            childSetSubs.set(childSet, sub);
-            childSet.values().forEach(value => {
-              controller.add(value);
-            });
-          },
-          next(changes) {
-            nextHasFired = true;
-            changes.forEach(change => {
-              if (change.type === 'add') {
-                controller.add(change.value);
-              } else if (change.type === 'remove') {
-                controller.remove(change.value);
+        if (childSet.isEnded()) { // optimization
+          childSet.values().forEach(value => {
+            controller.add(value);
+          });
+        } else {
+          childSet.subscribe({
+            start(sub) {
+              childSetSubs.set(childSet, sub);
+              childSet.values().forEach(value => {
+                controller.add(value);
+              });
+            },
+            next(changes) {
+              nextHasFired = true;
+              changes.forEach(change => {
+                if (change.type === 'add') {
+                  controller.add(change.value);
+                } else if (change.type === 'remove') {
+                  controller.remove(change.value);
+                }
+              });
+            },
+            error(err) {
+              controller.error(err);
+            },
+            complete() {
+              childSetSubs.delete(childSet);
+              if (mainSubCompleted && childSetSubs.size === 0) {
+                controller.end();
               }
-            });
-          },
-          error(err) {
-            controller.error(err);
-          },
-          complete() {
-            childSetSubs.delete(childSet);
-            if (mainSubCompleted && childSetSubs.size === 0) {
-              controller.end();
             }
-          }
-        });
+          });
+        }
       }
 
       setValues(new Set());
