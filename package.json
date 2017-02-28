@@ -4,7 +4,7 @@
   "description": "Class representing a changing and transformable collection of items.",
   "main": "index.js",
   "scripts": {
-    "prepare": "babel -s inline -d ./ src/ --ignore '*.test.*' && flow-copy-source -v src . --ignore '*.test.*'",
+    "prepare": "rm -f *.js *.flow && babel -s inline -d ./ src/ --ignore '*.test.*' && flow-copy-source -v src . --ignore '*.test.*'",
     "test": "npm run lint && npm run flow_check && jest",
     "flow_check": "flow check",
     "lint": "eslint .",
