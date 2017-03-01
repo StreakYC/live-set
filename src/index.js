@@ -53,6 +53,8 @@ export default class LiveSet<T> {
   _init: LiveSetInit<T>;
 
   _values: ?Set<T> = null;
+  _mutableValues: boolean = false; // Whether we can mutate the _values Set.
+
   _active: ?{
     controller: LiveSetController<T>;
     listenHandler: ListenHandler;
@@ -92,6 +94,7 @@ export default class LiveSet<T> {
     });
     ls._ended = true;
     ls._values = values;
+    ls._mutableValues = false;
     return ls;
   }
 
@@ -150,14 +153,15 @@ export default class LiveSet<T> {
 
   values(): Set<T> {
     if (this._values) {
-      const values = this._values;
       if (this._active) {
         const {listenHandler} = this._active;
         if (listenHandler.pullChanges) {
           listenHandler.pullChanges();
         }
       }
-      return this._ended ? values : new Set(values);
+      this._mutableValues = false;
+      /*:: if (!this._values) throw new Error(); */
+      return this._values;
     } else {
       if (this._active) {
         throw new Error('tried to call values() on liveset during subscription before setValues was called');
@@ -257,17 +261,25 @@ export default class LiveSet<T> {
           return !liveSet._active || liveSet._active.controller !== this;
         }/*:: ` */,
         add: value => {
-          const values = this._values;
+          let values = this._values;
           if (!values) throw new Error('setValue must be called before controller is used');
           if (!this._ended && !values.has(value)) {
+            if (!this._mutableValues) {
+              this._values = values = new Set(values);
+              this._mutableValues = true;
+            }
             values.add(value);
             this._queueChange({type: 'add', value});
           }
         },
         remove: value => {
-          const values = this._values;
+          let values = this._values;
           if (!values) throw new Error('setValue must be called before controller is used');
           if (!this._ended && values.has(value)) {
+            if (!this._mutableValues) {
+              this._values = values = new Set(values);
+              this._mutableValues = true;
+            }
             values.delete(value);
             this._queueChange({type: 'remove', value});
           }
@@ -298,7 +310,8 @@ export default class LiveSet<T> {
       };
       let setValues = values => {
         setValues = setValuesError;
-        this._values = new Set(values);
+        this._values = values;
+        this._mutableValues = false;
       };
       const listenHandlerOrFunction = this._init.listen(values => setValues(values), controller);
       if (!this._values) {
