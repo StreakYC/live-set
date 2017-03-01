@@ -298,7 +298,7 @@ export default class LiveSet<T> {
       };
       let setValues = values => {
         setValues = setValuesError;
-        this._values = values;
+        this._values = new Set(values);
       };
       const listenHandlerOrFunction = this._init.listen(values => setValues(values), controller);
       if (!this._values) {
