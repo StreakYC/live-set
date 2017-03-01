@@ -53,7 +53,8 @@ test('listen, subscribe', async () => {
     }
   });
 
-  expect(Array.from(ls.values())).toEqual([4,5]);
+  const firstValues = ls.values();
+  expect(Array.from(firstValues)).toEqual([4,5]);
 
   let changeHandlerCallCount = 0;
   const sub = ls.subscribe(changes => {
@@ -72,6 +73,7 @@ test('listen, subscribe', async () => {
   expect(sub.closed).toBe(false);
   // The listen function should run immediately
   expect(Array.from(ls.values())).toEqual([4,5,6,7]);
+  expect(Array.from(firstValues)).toEqual([4,5]);
   // The change handler should be called asynchronously
   expect(changeHandlerCallCount).toBe(0);
   expect(unsub).toHaveBeenCalledTimes(0);
