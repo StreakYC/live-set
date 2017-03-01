@@ -6,6 +6,8 @@ import LiveSet from '../src';
 import mapWithRemoval from '../src/mapWithRemoval';
 import benchmarkLiveSet from './lib/benchmarkLiveSet';
 
+process.env.NODE_ENV = 'production';
+
 let {liveSet, controller} = LiveSet.active(new Set([1,2,3,4,5]));
 
 const mapFn = (x, removal) => {

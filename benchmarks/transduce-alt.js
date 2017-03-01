@@ -7,6 +7,8 @@ import filter from '../src/filter';
 import map from '../src/map';
 import benchmarkLiveSet from './lib/benchmarkLiveSet';
 
+process.env.NODE_ENV = 'production';
+
 let {liveSet, controller} = LiveSet.active(new Set([1,2,3,4,5]));
 
 const evens = x => x%2 === 0;

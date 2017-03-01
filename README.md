@@ -477,6 +477,19 @@ instance which upon subscription will emit a `{value, removal}` object for
 every `value` currently in the input `liveSet` where `removal` is a Promise
 which will resolve after the `value` is removed from the input `liveSet`.
 
+## Bundling Note
+
+To use this module in browsers, a CommonJS bundler such as Browserify or
+Webpack should be used.
+
+LiveSet's code adds additional checks in some places if `process.env.NODE_ENV`
+is not set to "production". If you're using Browserify, then setting the
+NODE_ENV environment variable to "production" is enough to disable these
+checks. Webpack may require additional configuration.
+
+The additional checks make sure that the Set passed to `setValues` and the Set
+returned from the `values()` method are not modified.
+
 ## Types
 
 [Flow](https://flowtype.org/) type declarations for this module are included!

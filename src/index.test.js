@@ -54,6 +54,11 @@ test('listen, subscribe', async () => {
   });
 
   const firstValues = ls.values();
+
+  expect(() => firstValues.add(99)).toThrowError();
+  expect(() => firstValues.delete(5)).toThrowError();
+  expect(() => firstValues.clear()).toThrowError();
+
   expect(Array.from(firstValues)).toEqual([4,5]);
 
   let changeHandlerCallCount = 0;

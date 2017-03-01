@@ -85,6 +85,7 @@ export default class LiveSet<T> {
   }
 
   static constant<T>(values: Set<T>): LiveSet<T> {
+    makeSetImmutable(values);
     const shouldNotHappen = () => {
       throw new Error('Should not happen');
     };
@@ -159,14 +160,19 @@ export default class LiveSet<T> {
           listenHandler.pullChanges();
         }
       }
-      this._mutableValues = false;
+      if (this._mutableValues) {
+        this._mutableValues = false;
+        makeSetImmutable(this._values);
+      }
       /*:: if (!this._values) throw new Error(); */
       return this._values;
     } else {
       if (this._active) {
         throw new Error('tried to call values() on liveset during subscription before setValues was called');
       }
-      return this._init.read();
+      const s = this._init.read();
+      makeSetImmutable(s);
+      return s;
     }
   }
 
@@ -310,6 +316,7 @@ export default class LiveSet<T> {
       };
       let setValues = values => {
         setValues = setValuesError;
+        makeSetImmutable(values);
         this._values = values;
         this._mutableValues = false;
       };
@@ -351,3 +358,13 @@ export default class LiveSet<T> {
 (LiveSet:any).prototype[$$observable] = function() {
   return this;
 };
+
+function makeSetImmutable(set: Set<any>) {
+  if (process.env.NODE_ENV !== 'production') {
+    (set:any).add = (set:any).delete = (set:any).clear = readOnly;
+  }
+}
+
+function readOnly() {
+  throw new Error('Do not modify Set passed to or from LiveSet: Set is read-only in development');
+}
