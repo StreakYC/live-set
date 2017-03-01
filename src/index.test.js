@@ -28,11 +28,15 @@ test('listen, subscribe', async () => {
   const ls = new LiveSet({
     read: () => new Set([4,5]),
     listen(setValues, c) {
-      setValues(this.read());
+      const initialValues = this.read();
+      setValues(initialValues);
+
       expect(c.closed).toBe(false);
       c.add(5);
       c.add(6);
       c.add(7);
+      expect(Array.from(initialValues)).toEqual([4,5]);
+
       let t = setTimeout(() => {
         expect(c.closed).toBe(false);
         c.remove(5);
