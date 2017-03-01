@@ -3,6 +3,9 @@
 [![Circle CI](https://circleci.com/gh/StreakYC/live-set.svg?style=shield)](https://circleci.com/gh/StreakYC/live-set)
 [![npm version](https://badge.fury.io/js/live-set.svg)](https://badge.fury.io/js/live-set)
 
+This class is basically a Set with a subscribe() method that calls your
+callback after changes happen to the set of values.
+
 This class represents a set of values which may change over time or have
 transformations applied to it, resulting in a new LiveSet. After modifications
 are made, notifications will be delivered asynchronously, like Javascript
