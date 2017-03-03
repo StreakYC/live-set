@@ -231,7 +231,7 @@ test('add in pullChanges is not double-counted in pool', async () => {
   const fm1 = flatMap(s1, s => s);
 
   const fm1Next = jest.fn();
-  fm1.subscribe(fm1Next);
+  const fm1Sub = fm1.subscribe(fm1Next);
 
   const foo = new LiveSet({
     read() {
@@ -259,6 +259,11 @@ test('add in pullChanges is not double-counted in pool', async () => {
   expect(fm1Next.mock.calls).toEqual([]);
 
   await delay(0);
+
+  expect(fooMapper.mock.calls).toEqual([]);
+  expect(fm1Next.mock.calls).toEqual([]);
+
+  fm1Sub.pullChanges();
 
   expect(fooMapper.mock.calls).toEqual([
     [{original: 5}]
