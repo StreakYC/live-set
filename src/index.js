@@ -59,6 +59,7 @@ export default class LiveSet<T> {
     controller: LiveSetController<T>;
     listenHandler: ListenHandler;
   } = null;
+  _inSubscriptionStart = false;
   _ended: boolean = false;
   _endedWithError: boolean = false;
   _error: any = null;
@@ -154,7 +155,7 @@ export default class LiveSet<T> {
 
   values(): Set<T> {
     if (this._values) {
-      if (this._active) {
+      if (this._active && !this._inSubscriptionStart) {
         const {listenHandler} = this._active;
         if (listenHandler.pullChanges) {
           listenHandler.pullChanges();
@@ -340,7 +341,9 @@ export default class LiveSet<T> {
     }
 
     if (observer.start) {
+      this._inSubscriptionStart = true;
       observer.start(subscription);
+      this._inSubscriptionStart = false;
     }
     isStarting = false;
 
