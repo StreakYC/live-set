@@ -490,10 +490,13 @@ test('values() triggers pullChanges()', () => {
     read: () => new Set([5,6]),
     listen(setValues, controller) {
       setValues(this.read());
+      const changePuller = () => {
+        controller.add(7);
+      };
       return {
         unsubscribe() {},
-        pullChanges() {
-          controller.add(7);
+        getChangePullers() {
+          return [changePuller];
         }
       };
     }

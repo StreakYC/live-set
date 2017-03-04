@@ -16,9 +16,11 @@ export type LiveSetController<T> = {
   end(): void;
 };
 
+export type LiveSetChangePuller = () => void|Array<LiveSetChangePuller>;
+
 export type ListenHandler = {
   unsubscribe(): void;
-  +pullChanges?: ?() => void;
+  +getChangePullers?: ?() => Array<LiveSetChangePuller>;
 };
 
 export type LiveSetInit<T> = {
@@ -35,6 +37,7 @@ export type LiveSetSubscription = {
   closed: boolean;
   unsubscribe(): void;
   pullChanges(): void;
+  getChangePullers(): Array<LiveSetChangePuller>;
 };
 
 export type LiveSetObserver<T> = {
@@ -100,6 +103,13 @@ export default class LiveSet<T> {
     return ls;
   }
 
+  static pullMultipleSubscriptionChanges(subs: Array<LiveSetSubscription>) {
+    const executed = new Set();
+    subs.forEach(sub => {
+      executeChangePullers(executed, sub.getChangePullers());
+    });
+  }
+
   _queueChange(record: ?LiveSetChangeRecord<T>) {
     if (record) {
       this._changeQueue.push(record);
@@ -157,8 +167,8 @@ export default class LiveSet<T> {
     if (this._values) {
       if (this._active && !this._inSubscriptionStart) {
         const {listenHandler} = this._active;
-        if (listenHandler.pullChanges) {
-          listenHandler.pullChanges();
+        if (listenHandler.getChangePullers) {
+          executeChangePullers(new Set(), listenHandler.getChangePullers());
         }
       }
       if (this._mutableValues) {
@@ -203,7 +213,8 @@ export default class LiveSet<T> {
         unsubscribe: () => {
           subscription.closed = true;
         },
-        pullChanges: () => {}
+        pullChanges: () => {},
+        getChangePullers: () => []
       };
       if (observer.start) {
         observer.start(subscription);
@@ -227,6 +238,19 @@ export default class LiveSet<T> {
 
     let isStarting = true;
     let unsubscribedInStart = false;
+
+    const deliverQueuedChanges = [() => {
+      const changeQueueLength = this._changeQueue.length;
+      const originalNext = observer.next;
+      if (changeQueueLength !== 0 && originalNext) {
+        const changesToDeliver = this._changeQueue.slice(observerRecord.ignore);
+        if (changesToDeliver.length !== 0) {
+          observerRecord.ignore = changeQueueLength;
+          originalNext.call(observer, changesToDeliver);
+        }
+      }
+    }];
+
     const subscription = {
       /*:: closed: false&&` */ get closed() {
         return !isStarting && liveSet._observers.indexOf(observerRecord) < 0;
@@ -246,18 +270,13 @@ export default class LiveSet<T> {
         }
       },
       pullChanges: () => {
-        if (this._active && this._active.listenHandler && this._active.listenHandler.pullChanges) {
-          this._active.listenHandler.pullChanges();
+        LiveSet.pullMultipleSubscriptionChanges([subscription]);
+      },
+      getChangePullers: () => {
+        if (this._active && this._active.listenHandler && this._active.listenHandler.getChangePullers) {
+          return this._active.listenHandler.getChangePullers().concat(deliverQueuedChanges);
         }
-        const changeQueueLength = this._changeQueue.length;
-        const originalNext = observer.next;
-        if (changeQueueLength !== 0 && originalNext) {
-          const changesToDeliver = this._changeQueue.slice(observerRecord.ignore);
-          if (changesToDeliver.length !== 0) {
-            observerRecord.ignore = changeQueueLength;
-            originalNext.call(observer, changesToDeliver);
-          }
-        }
+        return deliverQueuedChanges;
       }
     };
 
@@ -370,4 +389,18 @@ function makeSetImmutable(set: Set<any>) {
 
 function readOnly() {
   throw new Error('Do not modify Set passed to or from LiveSet: Set is read-only in development');
+}
+
+function executeChangePullers(executed: Set<LiveSetChangePuller>, changePullers: Array<LiveSetChangePuller>) {
+  const considerAndRunChangePuller = changePuller => {
+    if (!executed.has(changePuller)) {
+      executed.add(changePuller);
+      const dynamicallyAddedChangePullers = changePuller();
+      if (dynamicallyAddedChangePullers) {
+        dynamicallyAddedChangePullers.forEach(considerAndRunChangePuller);
+      }
+    }
+  };
+
+  changePullers.forEach(considerAndRunChangePuller);
 }

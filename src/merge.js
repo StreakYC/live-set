@@ -60,10 +60,12 @@ export default function merge<T>(liveSets: Array<LiveSet<T>>): LiveSet<T> {
             sub.unsubscribe();
           });
         },
-        pullChanges() {
+        getChangePullers() {
+          const pullers = [];
           subs.forEach(sub => {
-            sub.pullChanges();
+            pullers.push.apply(pullers, sub.getChangePullers());
           });
+          return pullers;
         }
       };
     }

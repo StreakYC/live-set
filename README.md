@@ -64,7 +64,19 @@ function createElementChildLiveSet(element) {
       observer.observe(element, {childList: true});
 
       // The listen function may return an unsubscribe callback, or an object
-      // containing an unsubscribe callback and a pullChanges callback.
+      // containing an unsubscribe callback and a getChangePullers callback.
+
+      // If used, getChangePullers is expected to return the reference to the
+      // same function each time, so we define it once outside of the
+      // getChangePullers function instead of returning a new reference each
+      // time.
+      const changePullers = [() => {
+        // LiveSet instances generally deliver their change notifications
+        // asynchronously, but they can be forced to flush all queued up
+        // notifications synchronously.
+        changesHandler(observer.takeRecords());
+      }];
+
       return {
         unsubscribe() {
           // When the LiveSet has no more subscribers, disconnect the
@@ -72,13 +84,8 @@ function createElementChildLiveSet(element) {
           // `changesHandler` wastefully.
           observer.disconnect();
         },
-        pullChanges() {
-          // LiveSet instances generally deliver their change notifications
-          // asynchronously, but they can be forced to flush all queued up
-          // notifications synchronously. If a LiveSet is based on a source
-          // with the same behavior, such as a MutationObserver or another
-          // LiveSet,
-          changesHandler(observer.takeRecords());
+        getChangePullers() {
+          return changePullers;
         }
       };
     }
@@ -282,12 +289,31 @@ subscribers.
 
 The `listen` function may return a function to call upon deactivation, or an
 object with an `unsubscribe` method (to call upon deactivation) and optionally
-a `pullChanges` method. The pullChanges method will be called to flush any
-changes from the source when the `values()` method is called on the LiveSet, or
-the `pullChanges` method is called on a LiveSetSubscription. If the `listen`
-function subscribes to a LiveSet, then it may be useful to have the `listen`
-function return the LiveSetSubscription, which has unsubscribe and pullChanges
-methods.
+a `getChangePullers` method. The getChangePullers method will be called to
+return an Array of functions to flush any changes from the source when the
+`values()` method is called on the LiveSet, or the `pullChanges` method is
+called on a LiveSetSubscription. It is expected to return an Array of functions
+which will then immediately be called. Repeated calls to `getChangePullers`
+on the same LiveSet should return the same function references if possible so
+that they may be compared.
+
+(The `getChangePullers` method is expected to return an Array instead of doing
+the change-pulling work immediately so that when changes are being pulled from
+a LiveSet based on many sources which are based on overlapping sources, the
+list of change pullers can have duplicate work detected and skipped.)
+
+Advanced note: If determining the list of later change pullers to run is
+dependent on earlier change pullers having already run, then you can have a
+change puller return more change pullers to run. (The only place we've observed
+needing this so far was for the implementation of the flatMap function.)
+
+If the `listen` function subscribes to a LiveSet and uses it as the source of
+its values, then it may be useful to have the `listen` function return the
+LiveSetSubscription, which has unsubscribe and getChangePullers methods
+suitable for this use.
+
+#### LiveSet.pullMultipleSubscriptionChanges
+`LiveSet.pullMultipleSubscriptionChanges(subs: Array<LiveSetSubscription>)`
 
 #### LiveSet.constant
 `LiveSet.constant<T>(values: Set<T>): LiveSet<T>`
@@ -330,8 +356,9 @@ values() method must not be modified.
 
 If the LiveSet is currently inactive, then this will trigger the `read`
 function passed to the constructor to be called. If the LiveSet is currently
-active, then this will trigger the `pullChanges` function returned by the
-constructor's `listen` function if present.
+active, then this will trigger the `getChangePullers` function returned by the
+constructor's `listen` function if present and then call each function returned
+by it.
 
 #### LiveSet::subscribe
 `LiveSet<T>::subscribe(observer): LiveSetSubscription`
@@ -384,6 +411,19 @@ will be called after unsubscription.
 This will cause any queued change notifications to be immediately flushed to
 this subscription's observer's `next` function. This will not affect other
 subscriptions to the LiveSet.
+
+If you need to pullChanges on multiple subscriptions at once, use the
+`LiveSet.pullMultipleSubscriptionChanges` function instead which is able to
+skip redundant work in the case of LiveSets based on overlapping sources.
+
+#### LiveSetSubscription::getChangePullers
+`LiveSetSubscription::getChangePullers(): Array<LiveSetChangePuller>`
+
+This returns a list of LiveSetChangePuller functions that when run in sequence
+accomplish the same functionality as calling `pullChanges()`. This function
+should only be used when implementing the getChangePullers callback in the
+listen callback when constructing a LiveSet instance based on one or more input
+LiveSets.
 
 ### Transformations
 

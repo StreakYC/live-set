@@ -216,14 +216,16 @@ test('add in pullChanges is not double-counted in pool', async () => {
     listen(setValues, controller) {
       setValues(new Set([]));
       let hasPulled = false;
+      function pullChanges() {
+        if (!hasPulled) {
+          hasPulled = true;
+          controller.add({original: 5});
+        }
+      }
+
       return {
         unsubscribe() {},
-        pullChanges() {
-          if (!hasPulled) {
-            hasPulled = true;
-            controller.add({original: 5});
-          }
-        }
+        getChangePullers: () => [pullChanges]
       };
     }
   });

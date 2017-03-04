@@ -61,8 +61,8 @@ export default function mapWithRemoval<T,U>(input: LiveSet<T>, cb: (value: T, re
             resolve();
           });
         },
-        pullChanges() {
-          sub.pullChanges();
+        getChangePullers() {
+          return sub.getChangePullers();
         }
       };
     }

@@ -1,6 +1,7 @@
 /* @flow */
 
 import merge from './merge';
+import map from './map';
 import LiveSet from '.';
 import delay from 'pdelay';
 
@@ -78,4 +79,54 @@ test('read behavior consistent while stream is active or inactive', async () => 
   expect(Array.from(mergedLs.values())).toEqual([1,2,3,5,6,4]);
   await delay(0);
   expect(Array.from(mergedLs.values())).toEqual([1,2,3,5,6,4]);
+});
+
+test('pullChanges on diamond merge does not multiply pull to root', async () => {
+  const rootUnsubscribe = jest.fn();
+  const rootPullChanges = jest.fn();
+  let controller;
+  const root = map(new LiveSet({
+    read() {
+      throw new Error();
+    },
+    listen(setValues, _controller) {
+      setValues(new Set([1,2,3]));
+      controller = _controller;
+      return {
+        unsubscribe: rootUnsubscribe,
+        getChangePullers: () => [rootPullChanges]
+      };
+    }
+  }), x => x);
+
+  const transformed = new Array(5)
+    .fill(0)
+    .map((value, i) => i*100)
+    .map(offset => map(root, x => x+offset));
+
+  const merged = merge(transformed);
+
+  const next = jest.fn();
+  const sub = merged.subscribe(next);
+  if (!controller) throw new Error();
+
+  controller.add(4);
+
+  expect(rootUnsubscribe).toHaveBeenCalledTimes(0);
+  expect(rootPullChanges).toHaveBeenCalledTimes(0);
+  expect(next.mock.calls).toEqual([]);
+
+  sub.pullChanges();
+
+  expect(rootUnsubscribe).toHaveBeenCalledTimes(0);
+  expect(rootPullChanges).toHaveBeenCalledTimes(1);
+  expect(next.mock.calls).toEqual([
+    [[
+      {type: 'add', value: 4},
+      {type: 'add', value: 104},
+      {type: 'add', value: 204},
+      {type: 'add', value: 304},
+      {type: 'add', value: 404},
+    ]],
+  ]);
 });
