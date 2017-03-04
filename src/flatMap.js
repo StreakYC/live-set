@@ -25,6 +25,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
     listen(setValues, controller) {
       let mainSubCompleted = false;
       let hasSubscribedToChildren = false;
+      let childNextHasFired = false;
       const childSetSubs: Map<LiveSet<U>, LiveSetSubscription> = new Map();
 
       function childSetSubscribe(childSet: LiveSet<U>) {
@@ -41,6 +42,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
               });
             },
             next(changes) {
+              childNextHasFired = true;
               changes.forEach(change => {
                 if (change.type === 'add') {
                   controller.add(change.value);
@@ -107,13 +109,31 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
         }
       });
 
-      // let isPullingChanges = false;
+      let isPullingChanges = false;
+
+      const pullChanges = () => {
+        if (isPullingChanges) return;
+        isPullingChanges = true;
+        return mainSub.getChangePullers().concat([pullChildren, repullIfNecessary, () => {
+          isPullingChanges = false;
+        }]);
+      };
+
       const pullChildren = () => {
+        childNextHasFired = false;
         const changePullers = [];
         childSetSubs.forEach(sub => {
           changePullers.push.apply(changePullers, sub.getChangePullers());
         });
         return changePullers;
+      };
+
+      const repullIfNecessary = () => {
+        while (childNextHasFired) {
+          childNextHasFired = false;
+          mainSub.pullChanges();
+          LiveSet.pullMultipleSubscriptionChanges(Array.from(childSetSubs.values()));
+        }
       };
 
       return {
@@ -128,11 +148,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
         getChangePullers() {
           // We can't return the changePullers from the children until after
           // the changePullers for the main subscription have run.
-
-          // TODO could pulling a child trigger a change in the main liveset
-          // and require us to pull the main liveset and then the children
-          // again?
-          return mainSub.getChangePullers().concat([pullChildren]);
+          return [pullChanges];
         }
       };
     }
