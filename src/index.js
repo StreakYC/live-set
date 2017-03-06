@@ -350,6 +350,14 @@ export default class LiveSet<T> {
         };
       } else if (listenHandlerOrFunction != null && typeof listenHandlerOrFunction.unsubscribe === 'function') {
         active.listenHandler = listenHandlerOrFunction;
+        if (process.env.NODE_ENV !== 'production' && listenHandlerOrFunction.getChangePullers) {
+          const c1 = listenHandlerOrFunction.getChangePullers();
+          const c2 = (listenHandlerOrFunction:any).getChangePullers();
+          if (c1.length !== c2.length) throw new Error('change puller returns array of inconsistent length');
+          for (let i=0; i<c1.length; i++) {
+            if (c1[i] !== c2[i]) throw new Error('change puller returns array of inconsistent value');
+          }
+        }
       } else if (listenHandlerOrFunction != null) {
         throw new TypeError('listen must return object with unsubscribe method, a function, or null');
       }
