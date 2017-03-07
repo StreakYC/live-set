@@ -3,7 +3,7 @@
 import LiveSet from '.';
 import type {LiveSetSubscription} from '.';
 
-export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => LiveSet<U>): LiveSet<U> {
+export default function flatMapR<T,U>(liveSet: LiveSet<T>, cb: (value: T) => LiveSet<U>): LiveSet<U> {
   let isReading = false;
 
   return new LiveSet({
@@ -25,6 +25,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
     listen(setValues, controller) {
       let mainSubCompleted = false;
       let hasSubscribedToChildren = false;
+      let nextHasFired = false;
       const childSetSubs: Map<LiveSet<U>, LiveSetSubscription> = new Map();
 
       function childSetSubscribe(childSet: LiveSet<U>) {
@@ -41,6 +42,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
               });
             },
             next(changes) {
+              nextHasFired = true;
               changes.forEach(change => {
                 if (change.type === 'add') {
                   controller.add(change.value);
@@ -75,6 +77,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           hasSubscribedToChildren = true;
         },
         next(changes) {
+          nextHasFired = true;
           changes.forEach(change => {
             if (change.type === 'add') {
               const childSet = cb(change.value);
@@ -107,6 +110,7 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
         }
       });
 
+      let isPullingChanges = false;
       return {
         unsubscribe() {
           mainSub.unsubscribe();
@@ -117,10 +121,18 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
           childSetSubs.clear();
         },
         pullChanges() {
-          mainSub.pullChanges();
-          childSetSubs.forEach(sub => {
-            sub.pullChanges();
-          });
+          if (isPullingChanges) return;
+          isPullingChanges = true;
+
+          do {
+            nextHasFired = false;
+            mainSub.pullChanges();
+            childSetSubs.forEach(sub => {
+              sub.pullChanges();
+            });
+          } while (nextHasFired);
+
+          isPullingChanges = false;
         }
       };
     }
