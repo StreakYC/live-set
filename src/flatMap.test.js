@@ -198,8 +198,32 @@ test('recursive pool', async () => {
   );
 
   const next = jest.fn();
-  fmLs.subscribe({next});
+  const fmLsSub = fmLs.subscribe({next});
   expect(Array.from(fmLs.values())).toEqual([1, 2, 3, 4, 21, 41, 10, 30, 210, 410, 101, 301, 2101, 4101, 1010, 3010]);
+
+  fmLsSub.pullChanges();
+  expect(next.mock.calls).toEqual([
+    [[
+      {type: 'add', value: 101},
+      {type: 'add', value: 301},
+      {type: 'add', value: 2101},
+      {type: 'add', value: 4101},
+      {type: 'add', value: 1010},
+      {type: 'add', value: 3010},
+    ]]
+  ]);
+
+  sourcesController.add(LiveSet.constant(new Set([5])));
+  expect(next.mock.calls.slice(1)).toEqual([]);
+  fmLsSub.pullChanges();
+  expect(next.mock.calls.slice(1)).toEqual([
+    [[
+      {type: 'add', value: 5},
+      {type: 'add', value: 50},
+      {type: 'add', value: 501},
+      {type: 'add', value: 5010},
+    ]]
+  ]);
 });
 
 test('add in pullChanges is not double-counted in pool', async () => {
