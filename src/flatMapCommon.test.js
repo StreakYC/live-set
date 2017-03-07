@@ -5,9 +5,7 @@ import flatMapR from './flatMapR';
 
 import LiveSet from '.';
 import delay from 'pdelay';
-import transduce from './transduce';
 import map from './map';
-import t from 'transducers.js';
 
 for (let flatMapX of [flatMap, flatMapR]) {
   // Poison these two names to make sure none of the tests call them.
