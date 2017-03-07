@@ -458,6 +458,15 @@ will be removed from the output LiveSet.
 The behavior is undefined if any of the LiveSets returned by the callback
 contain equal values at the same time.
 
+#### live-set/flatMapR
+`flatMapR<T,U>(liveSet: LiveSet<T>, cb: (value: T) => LiveSet<U>): LiveSet<U>`
+
+This function is the same as `flatMap`, but it should be used for fully correct
+`LiveSetSubscription::pullChanges` behavior in recursive situations where it is
+expected that a new item being emitted to the output set will cause a new item
+to be added to the input set (and therefore potentially more items to the
+output set again).
+
 #### live-set/mapWithRemoval
 `mapWithRemoval<T,U>(input: LiveSet<T>, cb: (value: T, removal: Promise<void>) => U): LiveSet<U>`
 
