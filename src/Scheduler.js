@@ -10,17 +10,26 @@ export default class Scheduler {
   _index: number = 0;
 
   schedule(cb: ()=>void) {
-    this._queue.push(cb);
-    if (!this._isFlushing) {
+    this._queue.push(() => {
+      try {
+        cb();
+      } catch (e) {
+        setTimeout(() => {
+          throw e;
+        }, 0);
+      }
+    });
+    if (this._queue.length === 1) {
       asap(() => {
         this.flush();
       });
-      this._isFlushing = true;
     }
   }
 
   flush() {
     // based on https://github.com/kriskowal/asap/blob/master/raw.js
+    if (this._isFlushing) return;
+    this._isFlushing = true;
     const queue = this._queue;
     while (this._index < queue.length) {
       const currentIndex = this._index;
