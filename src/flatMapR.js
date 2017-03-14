@@ -7,6 +7,7 @@ export default function flatMapR<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Liv
   let isReading = false;
 
   return new LiveSet({
+    scheduler: liveSet.getScheduler(),
     read() {
       if (isReading) {
         throw new Error('reading inactive recursively-flatMapped stream is not supported');

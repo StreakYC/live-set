@@ -4,6 +4,7 @@ import LiveSet from '.';
 
 export default function map<T,U>(liveSet: LiveSet<T>, cb: (value: T) => U): LiveSet<U> {
   return new LiveSet({
+    scheduler: liveSet.getScheduler(),
     read() {
       const s = new Set();
       liveSet.values().forEach(value => {

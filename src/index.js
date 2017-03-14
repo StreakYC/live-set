@@ -1,6 +1,6 @@
 /* @flow */
 
-import asap from 'asap';
+import Scheduler from './Scheduler';
 import $$observable from 'symbol-observable';
 
 export type LiveSetChangeRecord<T> =
@@ -22,6 +22,7 @@ export type ListenHandler = {
 };
 
 export type LiveSetInit<T> = {
+  scheduler?: ?Scheduler;
   read(): Set<T>;
   listen(
     setValues: { (values: Set<T>): void },
@@ -50,7 +51,10 @@ type LiveSetObserverRecord<T> = {
 };
 
 export default class LiveSet<T> {
+  static defaultScheduler = new Scheduler();
+
   _init: LiveSetInit<T>;
+  _scheduler: Scheduler;
 
   _values: ?Set<T> = null;
   _mutableValues: boolean = false; // Whether we can mutate the _values Set.
@@ -69,6 +73,7 @@ export default class LiveSet<T> {
 
   constructor(init: LiveSetInit<T>) {
     this._init = init;
+    this._scheduler = init.scheduler || LiveSet.defaultScheduler;
   }
 
   static active<T>(initialValues: ?Set<T>): {liveSet: LiveSet<T>, controller: LiveSetController<T>} {
@@ -106,7 +111,7 @@ export default class LiveSet<T> {
     }
     if (!this._queuedCall) {
       this._queuedCall = true;
-      asap(() => {
+      this._scheduler.schedule(() => {
         this._queuedCall = false;
         const changes = this._changeQueue;
         this._changeQueue = [];
@@ -179,6 +184,10 @@ export default class LiveSet<T> {
 
   isEnded(): boolean {
     return this._ended;
+  }
+
+  getScheduler(): Scheduler {
+    return this._scheduler;
   }
 
   subscribe(observerOrOnNext: LiveSetObserver<T> | (changes: Array<LiveSetChangeRecord<T>>) => void, onError: ?(err: any) => void, onComplete: ?() => void): LiveSetSubscription {

@@ -68,6 +68,7 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
   }
 
   return new LiveSet({
+    scheduler: liveSet.getScheduler(),
     read: () => valuesAndContext().values,
     listen(setValues, controller) {
       let inputToOutputValues, xform, addsComplete;

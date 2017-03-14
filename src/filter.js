@@ -11,6 +11,7 @@ declare function filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): LiveSet<
 /*:: ` */
 export default function filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): LiveSet<T> {
   return new LiveSet({
+    scheduler: liveSet.getScheduler(),
     read() {
       const ret = new Set();
       liveSet.values().forEach(value => {

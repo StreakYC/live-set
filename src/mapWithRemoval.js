@@ -4,6 +4,7 @@ import LiveSet from '.';
 
 export default function mapWithRemoval<T,U>(input: LiveSet<T>, cb: (value: T, removal: Promise<void>) => U): LiveSet<U> {
   const output = new LiveSet({
+    scheduler: input.getScheduler(),
     read() {
       throw new Error('mapWithRemoval liveset may not be read while inactive');
     },

@@ -434,6 +434,32 @@ test('pullChanges', async () => {
   ]);
 });
 
+test('Scheduler.flush()', async () => {
+  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+  const next = jest.fn();
+  liveSet.subscribe(next);
+  controller.add(7);
+  expect(next.mock.calls).toEqual([
+  ]);
+  LiveSet.defaultScheduler.flush();
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  controller.add(8);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]]
+  ]);
+  await delay(0);
+  expect(next.mock.calls).toEqual([
+    [[{type: 'add', value: 7}]],
+    [[{type: 'add', value: 8}]]
+  ]);
+});
+
 test('pullChanges and ignoring already-delivered values', async () => {
   const {liveSet, controller} = LiveSet.active(new Set([5]));
   const next = jest.fn();

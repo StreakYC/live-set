@@ -250,10 +250,10 @@ console.log(firstValue1 === firstValue2); // true
 ### Core
 
 #### LiveSet::constructor
-`LiveSet<T>::constructor({read, listen})`
+`LiveSet<T>::constructor({scheduler?, read, listen})`
 
 The constructor must be passed an object containing `read` and `listen`
-functions.
+functions, and optionally a `scheduler` property of the Scheduler type.
 
 The `read` function is called if the values() method is called on the LiveSet
 instance while it is inactive but not yet ended. The `read` function is
@@ -313,12 +313,23 @@ to close the resource manually if necessary.
 This function is inspired by the nonstandard "Promise.defer()" function that
 some Promise libraries have implemented.
 
+#### LiveSet.defaultScheduler
+`LiveSet.defaultScheduler: Scheduler`
+
+This is the Scheduler object used by default for new LiveSets.
+
 #### LiveSet::isEnded
 `LiveSet<T>::isEnded(): boolean`
 
 This returns whether the LiveSet is in the ended state. LiveSets in the ended
 state will never have their values change, deliver any change notifications, or
 keep references to their subscribers.
+
+#### LiveSet::getScheduler
+`LiveSet<T>::getScheduler(): Scheduler`
+
+Retrieve the Scheduler object that a LiveSet was instantiated with. This may be
+used so that a new LiveSet can be instantiated with the same Scheduler.
 
 #### LiveSet::values
 `LiveSet<T>::values(): Set<T>`
@@ -391,6 +402,10 @@ The following functions usually take a pre-existing LiveSet instance as input,
 and return a new LiveSet instance. These functions are implemented in separate
 modules rather than as methods of LiveSet in part so that only the functions
 used have to be included in a javascript bundle built for browsers.
+
+For all functions below which produce a LiveSet, the LiveSet uses the same
+scheduler as the input LiveSet or the same as the first input LiveSet if
+multiple are given.
 
 #### live-set/filter
 `filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): LiveSet<T>`
@@ -485,6 +500,13 @@ This will return an [Observable](https://tc39.github.io/proposal-observable/)
 instance which upon subscription will emit a `{value, removal}` object for
 every `value` currently in the input `liveSet` where `removal` is a Promise
 which will resolve after the `value` is removed from the input `liveSet`.
+
+### live-set/Scheduler
+`Scheduler::constructor()`
+
+A scheduler object has a `schedule(callback)` method which schedules a callback
+to run asynchronously, and a `flush()` method to run all currently scheduled
+callbacks early.
 
 ## Bundling Note
 
