@@ -41,16 +41,24 @@ test('works', async () => {
 
   const next = jest.fn(), error = jest.fn(), complete = jest.fn();
   const sub = ls.subscribe({next, error, complete});
+  expect(Array.from(ls.values())).toEqual([{x:'1'}, {x:'one'}, {x:'uno'}, {x:'2'}, {x:'two'}, {x:'dos'}]);
+  expect(next.mock.calls).toEqual([]);
 
   await delay(60);
 
   expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'uno'}, {x:'2'}, {x:'two'}, {x:'dos'}, {x:'ten'}]);
+  expect(next.mock.calls).toEqual([
+    [[{type:'remove', value:{x:'1'}}, {type:'add', value:{x:'ten'}}]],
+  ]);
 
   await delay(60);
 
   expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'uno'}, {x:'two'}, {x:'dos'}, {x:'ten'}, {x:'twenty'}]);
 
-  expect(next.mock.calls.length).toBeGreaterThanOrEqual(2);
+  expect(next.mock.calls).toEqual([
+    [[{type:'remove', value:{x:'1'}}, {type:'add', value:{x:'ten'}}]],
+    [[{type:'remove', value:{x:'2'}}, {type:'add', value:{x:'twenty'}}]],
+  ]);
   expect(error).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(0);
   expect(ls1Cleanup).toHaveBeenCalledTimes(0);
