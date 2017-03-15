@@ -15,7 +15,7 @@ test('works', async () => {
       setTimeout(() => {
         controller.remove(originalValues[0]);
         controller.add({x:'ten'});
-      }, 30);
+      }, 50);
       return ls1Cleanup;
     }
   });
@@ -30,7 +30,7 @@ test('works', async () => {
       setTimeout(() => {
         controller.remove(originalValues[0]);
         controller.add({x:'twenty'});
-      }, 90);
+      }, 150);
       return ls2Cleanup;
     }
   });
@@ -44,14 +44,14 @@ test('works', async () => {
   expect(Array.from(ls.values())).toEqual([{x:'1'}, {x:'one'}, {x:'uno'}, {x:'2'}, {x:'two'}, {x:'dos'}]);
   expect(next.mock.calls).toEqual([]);
 
-  await delay(60);
+  await delay(100);
 
   expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'uno'}, {x:'2'}, {x:'two'}, {x:'dos'}, {x:'ten'}]);
   expect(next.mock.calls).toEqual([
     [[{type:'remove', value:{x:'1'}}, {type:'add', value:{x:'ten'}}]],
   ]);
 
-  await delay(60);
+  await delay(100);
 
   expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'uno'}, {x:'two'}, {x:'dos'}, {x:'ten'}, {x:'twenty'}]);
 
