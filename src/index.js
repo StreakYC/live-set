@@ -76,10 +76,11 @@ export default class LiveSet<T> {
     this._scheduler = init.scheduler || LiveSet.defaultScheduler;
   }
 
-  static active<T>(initialValues: ?Set<T>): {liveSet: LiveSet<T>, controller: LiveSetController<T>} {
+  static active<T>(initialValues: ?Set<T>, options: ?{scheduler?: ?Scheduler}): {liveSet: LiveSet<T>, controller: LiveSetController<T>} {
     const set = initialValues || new Set();
     let controller;
     const liveSet = new LiveSet({
+      scheduler: options ? options.scheduler : null,
       read: () => set,
       listen: (setValues, _controller) => {
         setValues(set);
@@ -90,12 +91,13 @@ export default class LiveSet<T> {
     return {liveSet, controller: (controller: any)};
   }
 
-  static constant<T>(values: Set<T>): LiveSet<T> {
+  static constant<T>(values: Set<T>, options: ?{scheduler?: ?Scheduler}): LiveSet<T> {
     makeSetImmutable(values);
     const shouldNotHappen = () => {
       throw new Error('Should not happen');
     };
     const ls = new LiveSet({
+      scheduler: options ? options.scheduler : null,
       read: shouldNotHappen,
       listen: shouldNotHappen
     });

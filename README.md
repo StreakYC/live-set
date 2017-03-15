@@ -290,14 +290,17 @@ function return the LiveSetSubscription, which has unsubscribe and pullChanges
 methods.
 
 #### LiveSet.constant
-`LiveSet.constant<T>(values: Set<T>): LiveSet<T>`
+`LiveSet.constant<T>(values: Set<T>, options?: Object): LiveSet<T>`
 
 This creates a LiveSet with a set of values that will never change. The LiveSet
 will start in the ended state, and therefore will never deliver change
 notifications or keep references to subscribers.
 
+The optional `options` parameter may have a `scheduler` property specifying the
+Scheduler instance to use.
+
 #### LiveSet.active
-`LiveSet.active<T>(initialValues?: Set<T>): {liveSet: LiveSet<T>, controller: LiveSetController<T>}`
+`LiveSet.active<T>(initialValues?: Set<T>, options?: Object): {liveSet: LiveSet<T>, controller: LiveSetController<T>}`
 
 This is a convenience method to create a LiveSet that starts out in the
 activated state and never exits the activated state. The new LiveSet and its
@@ -309,6 +312,9 @@ lifecycle of LiveSets. If the LiveSet requires some resource to be held open to
 keep it populated, then you will not be able to auto-close the resource when
 the LiveSet loses its subscribers. You will have to provide your own mechanism
 to close the resource manually if necessary.
+
+The optional `options` parameter may have a `scheduler` property specifying the
+Scheduler instance to use.
 
 This function is inspired by the nonstandard "Promise.defer()" function that
 some Promise libraries have implemented.
