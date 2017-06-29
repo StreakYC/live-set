@@ -18,6 +18,14 @@
   ],
   "author": "Chris Cowan <agentme49@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StreakYC/live-set.git"
+  },
+  "bugs": {
+    "url": "https://github.com/StreakYC/live-set/issues"
+  },
+  "homepage": "https://github.com/StreakYC/live-set#readme",
   "browserify": {
     "transform": [
       "envify"
