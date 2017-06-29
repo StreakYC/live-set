@@ -35,12 +35,14 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
     };
   }
 
-  function valuesAndContext(): {
+  type ValuesAndContext = {
     values: Set<any>;
     inputToOutputValues: Map<any, Array<any>>;
     xform: Object;
     addsComplete: boolean;
-  } {
+  };
+
+  function valuesAndContext(): ValuesAndContext {
     const inputToOutputValues = new Map();
     const xform = transducer(arrayXf);
     let addsComplete = false;
