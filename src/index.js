@@ -323,7 +323,7 @@ export default class LiveSet<T> {
           unsubscribe: () => {}
         }
       };
-      const setValuesError = () => {
+      const setValuesError: Function = () => {
         throw new Error('setValues must be called once during listen');
       };
       let setValues = values => {
