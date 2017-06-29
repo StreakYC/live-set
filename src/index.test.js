@@ -216,6 +216,7 @@ test("don't receive changes that already happened when subscribing", async () =>
 });
 
 test('subscribe, unsubscribe, subscribe', async () => {
+  let lsStep;
   const listenStart = jest.fn();
   const unsub = jest.fn();
   const ls = new LiveSet({
@@ -224,11 +225,11 @@ test('subscribe, unsubscribe, subscribe', async () => {
       setValues(this.read());
       listenStart();
       c.add(2);
-      let t = setTimeout(() => {
+      lsStep = () => {
         c.add(3);
-      }, 40);
+      };
       return () => {
-        clearTimeout(t);
+        lsStep = null;
         unsub();
       };
     }
@@ -243,7 +244,9 @@ test('subscribe, unsubscribe, subscribe', async () => {
     await delay(1);
     expect(changeHandler.mock.calls).toEqual([]);
     expect(Array.from(ls.values())).toEqual([1,2]);
-    await delay(100);
+    if (!lsStep) throw new Error('liveset is not being listened to currently');
+    lsStep();
+    await delay(0);
     expect(changeHandler.mock.calls).toEqual([
       [[{type: 'add', value: 3}]]
     ]);

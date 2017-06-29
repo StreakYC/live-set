@@ -5,6 +5,8 @@ import LiveSet from '.';
 import delay from 'pdelay';
 
 test('works', async () => {
+  let ls1Step, ls2Step;
+
   const ls1Cleanup = jest.fn();
   const ls1 = new LiveSet({
     read: () => new Set([{x:'1'}, {x:'one'}]),
@@ -12,10 +14,10 @@ test('works', async () => {
       setValues(this.read());
       const originalValues = Array.from(ls1.values());
       controller.add({x:'uno'});
-      setTimeout(() => {
+      ls1Step = () => {
         controller.remove(originalValues[0]);
         controller.add({x:'ten'});
-      }, 50);
+      };
       return ls1Cleanup;
     }
   });
@@ -27,10 +29,10 @@ test('works', async () => {
       setValues(this.read());
       const originalValues = Array.from(ls2.values());
       controller.add({x:'dos'});
-      setTimeout(() => {
+      ls2Step = () => {
         controller.remove(originalValues[0]);
         controller.add({x:'twenty'});
-      }, 150);
+      };
       return ls2Cleanup;
     }
   });
@@ -44,14 +46,18 @@ test('works', async () => {
   expect(Array.from(ls.values())).toEqual([{x:'1'}, {x:'one'}, {x:'uno'}, {x:'2'}, {x:'two'}, {x:'dos'}]);
   expect(next.mock.calls).toEqual([]);
 
-  await delay(100);
+  if (!ls1Step || !ls2Step) throw new Error('Should not happen');
+
+  ls1Step();
+  await delay(0);
 
   expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'uno'}, {x:'2'}, {x:'two'}, {x:'dos'}, {x:'ten'}]);
   expect(next.mock.calls).toEqual([
     [[{type:'remove', value:{x:'1'}}, {type:'add', value:{x:'ten'}}]],
   ]);
 
-  await delay(100);
+  ls2Step();
+  await delay(0);
 
   expect(Array.from(ls.values())).toEqual([{x:'one'}, {x:'uno'}, {x:'two'}, {x:'dos'}, {x:'ten'}, {x:'twenty'}]);
 

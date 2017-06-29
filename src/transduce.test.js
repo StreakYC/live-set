@@ -57,6 +57,7 @@ test('end before changes', async () => {
 });
 
 test('listen', async () => {
+  let lsStep1, lsStep2;
   const lsCleanup = jest.fn();
   const ls = new LiveSet({
     read: () => new Set([{x:1}, {x:2}]),
@@ -67,7 +68,7 @@ test('listen', async () => {
       controller.add({x:3});
       const four = {x:4};
       controller.add(four);
-      setTimeout(() => {
+      lsStep1 = () => {
         controller.remove(originalValues[0]);
         controller.remove(originalValues[1]);
         controller.add({x:5});
@@ -76,13 +77,13 @@ test('listen', async () => {
         controller.add({x:8});
         controller.add({x:9});
         controller.add({x:10});
-        setTimeout(() => {
-          controller.add({x:11});
-          controller.add({x:12});
-          controller.remove(four);
-          controller.end();
-        }, 60);
-      }, 30);
+      };
+      lsStep2 = () => {
+        controller.add({x:11});
+        controller.add({x:12});
+        controller.remove(four);
+        controller.end();
+      };
       return lsCleanup;
     }
   });
@@ -98,12 +99,15 @@ test('listen', async () => {
   const complete = jest.fn();
   const sub = tls.subscribe({complete});
 
+  if (!lsStep1 || !lsStep2) throw new Error('listen callback was not called');
+
   expect(lsCleanup).toHaveBeenCalledTimes(0);
   expect(complete).toHaveBeenCalledTimes(0);
   expect(sub.closed).toBe(false);
   expect(tls.isEnded()).toBe(false);
 
-  await delay(60);
+  lsStep1();
+  await delay(0);
 
   expect(Array.from(tls.values())).toEqual([{x:40}, {x:60}]);
   expect(lsCleanup).toHaveBeenCalledTimes(0);
@@ -111,7 +115,8 @@ test('listen', async () => {
   expect(sub.closed).toBe(false);
   expect(tls.isEnded()).toBe(false);
 
-  await delay(90);
+  lsStep2();
+  await delay(0);
 
   expect(Array.from(tls.values())).toEqual([{x:60}]);
   expect(lsCleanup).toHaveBeenCalledTimes(1);

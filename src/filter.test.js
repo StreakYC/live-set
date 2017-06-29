@@ -5,6 +5,7 @@ import LiveSet from '.';
 import delay from 'pdelay';
 
 test('works', async () => {
+  let lsStep;
   const lsCleanup = jest.fn();
   const ls = new LiveSet({
     read: () => new Set([{x:1}, {x:2}]),
@@ -12,11 +13,11 @@ test('works', async () => {
       setValues(this.read());
       const originalValues = Array.from(ls.values());
       controller.add({x:3});
-      setTimeout(() => {
+      lsStep = () => {
         controller.remove(originalValues[0]);
         controller.remove(originalValues[1]);
         controller.add({x:4});
-      }, 30);
+      };
       return lsCleanup;
     }
   });
@@ -33,7 +34,9 @@ test('works', async () => {
   const next = jest.fn();
   const sub = filteredLs.subscribe(next);
 
-  await delay(60);
+  if (!lsStep) throw new Error('listen callback was not called');
+  lsStep();
+  await delay(0);
 
   expect(Array.from(filteredLs.values())).toEqual([{x:4}]);
   expect(filterFn.mock.calls).toEqual([

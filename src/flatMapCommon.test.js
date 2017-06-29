@@ -29,6 +29,7 @@ for (let flatMapX of [flatMap, flatMapR]) {
         }
       });
 
+      let ls2Callbacks = new Set();
       const ls2Cleanup = jest.fn();
       const ls2 = flatMapX(ls, value =>
         new LiveSet({
@@ -37,13 +38,14 @@ for (let flatMapX of [flatMap, flatMapR]) {
             setValues(this.read());
             controllers.push(controller);
 
-            const t = setTimeout(() => {
+            const cb = () => {
               controller.add(value*100);
               controller.add(value*1000);
               controller.remove(value*10);
-            }, 90);
+            };
+            ls2Callbacks.add(cb);
             return () => {
-              clearTimeout(t);
+              ls2Callbacks.delete(cb);
               ls2Cleanup();
             };
           }
@@ -74,7 +76,8 @@ for (let flatMapX of [flatMap, flatMapR]) {
       expect(lsCleanup).toHaveBeenCalledTimes(0);
       expect(ls2Cleanup).toHaveBeenCalledTimes(1);
 
-      await delay(120);
+      ls2Callbacks.forEach(fn => fn());
+      await delay(0);
 
       expect(next.mock.calls.length).toBeGreaterThanOrEqual(2);
       expect(error).toHaveBeenCalledTimes(0);
