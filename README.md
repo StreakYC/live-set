@@ -521,8 +521,10 @@ Webpack should be used.
 
 LiveSet's code adds additional checks in some places if `process.env.NODE_ENV`
 is not set to "production". If you're using Browserify, then setting the
-NODE_ENV environment variable to "production" is enough to disable these
-checks. Webpack may require additional configuration.
+NODE_ENV environment variable to "production" during build is enough to disable
+these checks. Instructions for other bundlers [can be found in React's
+documentation](https://reactjs.org/docs/optimizing-performance.html#use-the-production-build),
+which uses the same convention.
 
 The additional checks make sure that the Set passed to `setValues` and the Set
 returned from the `values()` method are not modified.
