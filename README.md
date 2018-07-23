@@ -94,7 +94,7 @@ console.log(bodyChildren.values());
 const subscription = bodyChildren.subscribe(changes => {
   console.log(changes);
   // If an element is added directly to the page body, this would log output like this:
-  // {type: 'add', value: <div> }
+  // [{type: 'add', value: <div> }]
 });
 
 // We can later unsubscribe the above callback when we're no longer interested:
@@ -174,7 +174,7 @@ const final = merge([
 const subscription = final.subscribe({
   start() {
     // Note that whenever we are subscribing and reading the values of a
-    // liveset, we call the .values() method on the liveset after we have
+    // liveset, we call the .values() method on the liveset only after we have
     // subscribed to it, so that it's activated first. If we call .values()
     // before `final` is active, then its values will be computed twice, once
     // on the .values() call and then again when we subscribe to `final`.
@@ -368,7 +368,8 @@ to read the current values of the LiveSet with the values() method.
 The `next` function is called after any changes have been made to the LiveSet's
 set of values. These changes notifications are delivered either asynchronously,
 or whenever change notifications are flushed early due to a `LiveSet::values()`
-or `LiveSetSubscription::pullChanges()` call.
+or `LiveSetSubscription::pullChanges()` call. The parameter passed to the
+`next` function is an array of LiveSetChangeRecord objects.
 
 The `error` function is called if the LiveSet is ended by a call to
 `controller.error`, and it's passed the value passed to the `controller.error`
@@ -401,6 +402,16 @@ will be called after unsubscription.
 This will cause any queued change notifications to be immediately flushed to
 this subscription's observer's `next` function. This will not affect other
 subscriptions to the LiveSet.
+
+#### LiveSetChangeRecord<T>
+
+This is a simple object with a `type` property and an optional `value`
+property. An array of LiveSetChangeRecord objects is passed to the `next`
+callback of a LiveSet::subscribe call.
+
+    {type: 'add', value: T} |
+    {type: 'remove', value: T} |
+    {type: 'end'};
 
 ### Transformations
 
