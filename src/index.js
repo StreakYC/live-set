@@ -3,12 +3,12 @@
 import Scheduler from './Scheduler';
 import $$observable from 'symbol-observable';
 
-export type LiveSetChangeRecord<T> =
-  {type: 'add', value: T} |
-  {type: 'remove', value: T} |
+export type LiveSetChangeRecord<+T> =
+  {type: 'add', +value: T} |
+  {type: 'remove', +value: T} |
   {type: 'end'};
 
-export type LiveSetController<T> = {
+export type LiveSetController<-T> = {
   closed: boolean;
   add(item: T): void;
   remove(item: T): void;
@@ -30,7 +30,7 @@ export type LiveSetInit<T> = {
   ): ?ListenHandler|()=>void;
 };
 
-export type LiveSetSubscriber<T> = (changes: Array<LiveSetChangeRecord<T>>) => void;
+export type LiveSetSubscriber<-T> = (changes: $ReadOnlyArray<LiveSetChangeRecord<T>>) => void;
 
 export type LiveSetSubscription = {
   closed: boolean;
@@ -38,11 +38,11 @@ export type LiveSetSubscription = {
   pullChanges(): void;
 };
 
-export type LiveSetObserver<T> = {
-  start?: ?(subscription: LiveSetSubscription) => void;
-  next?: ?(changes: Array<LiveSetChangeRecord<T>>) => void;
-  error?: ?(err: any) => void;
-  complete?: ?() => void;
+export type LiveSetObserver<-T> = {
+  +start?: ?(subscription: LiveSetSubscription) => void;
+  +next?: ?(changes: $ReadOnlyArray<LiveSetChangeRecord<T>>) => void;
+  +error?: ?(err: any) => void;
+  +complete?: ?() => void;
 };
 
 type LiveSetObserverRecord<T> = {
@@ -192,7 +192,7 @@ export default class LiveSet<T> {
     return this._scheduler;
   }
 
-  subscribe(observerOrOnNext: LiveSetObserver<T> | (changes: Array<LiveSetChangeRecord<T>>) => void, onError: ?(err: any) => void, onComplete: ?() => void): LiveSetSubscription {
+  subscribe(observerOrOnNext: LiveSetObserver<T> | (changes: $ReadOnlyArray<LiveSetChangeRecord<T>>) => void, onError: ?(err: any) => void, onComplete: ?() => void): LiveSetSubscription {
     const liveSet = this;
 
     let observer;
