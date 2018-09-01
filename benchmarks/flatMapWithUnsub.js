@@ -11,7 +11,7 @@ process.env.NODE_ENV = 'production';
 let {liveSet, controller} = LiveSet.active(new Set([1,2,3,4,5]));
 
 const flatMapFn = x => {
-  const o = {
+  const o: any = {
     x,
     removed: false
   };
