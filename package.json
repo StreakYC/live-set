@@ -3,6 +3,7 @@
   "version": "0.4.4",
   "description": "Class representing a changing and transformable collection of items.",
   "main": "index.js",
+  "sideEffects": false,
   "scripts": {
     "prepare": "rm -f *.js *.flow && babel -s inline -d ./ src/ --ignore '*.test.*' && flow-copy-source -v src . --ignore '*.test.*'",
     "test": "yarn run lint && yarn run flow_check && jest",
