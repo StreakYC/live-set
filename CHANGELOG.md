@@ -5,7 +5,7 @@
   targeting browsers without native support for these.
 * Updated zen-observable dependency from ^0.6.0 to ^0.8.9. If you use the toValueObservable
   module, then the returned Observable object may have differences now. The callbacks passed
-  to `Observable.subscribe()` may be called asynchronously now.
+  to `Observable.subscribe()` won't be called synchronously with the initial subscribe call.
 
 ### Improvements
 * Upgraded to Babel 7.
