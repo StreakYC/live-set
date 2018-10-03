@@ -40,7 +40,7 @@ export type LiveSetSubscription = {
 
 export type LiveSetObserver<-T> = {
   +start?: ?(subscription: LiveSetSubscription) => void;
-  +next?: ?(changes: $ReadOnlyArray<LiveSetChangeRecord<T>>) => void;
+  +next?: ?LiveSetSubscriber<T>;
   +error?: ?(err: any) => void;
   +complete?: ?() => void;
 };
@@ -192,7 +192,7 @@ export default class LiveSet<T> {
     return this._scheduler;
   }
 
-  subscribe(observerOrOnNext: LiveSetObserver<T> | (changes: $ReadOnlyArray<LiveSetChangeRecord<T>>) => void, onError: ?(err: any) => void, onComplete: ?() => void): LiveSetSubscription {
+  subscribe(observerOrOnNext: LiveSetObserver<T> | LiveSetSubscriber<T>, onError: ?(err: any) => void, onComplete: ?() => void): LiveSetSubscription {
     const liveSet = this;
 
     let observer;
