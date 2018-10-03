@@ -1,4 +1,4 @@
-## 1.0.0 (Upcoming)
+## 1.0.0 (2018-10-03)
 
 ### Breaking Changes
 * Requires global `Map`, `Set`, and `Promise` support. A polyfill must be used if you're
