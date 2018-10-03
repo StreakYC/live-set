@@ -8,6 +8,7 @@
   to `Observable.subscribe()` won't be called synchronously with the initial subscribe call.
 
 ### Improvements
+* Added TypeScript type definitions.
 * Upgraded to Babel 7.
 
 ## 0.4.4 (2018-08-31)

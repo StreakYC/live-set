@@ -659,6 +659,16 @@
     lodash "^4.17.10"
     to-fast-properties "^2.0.0"
 
+"@types/transducers.js@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@types/transducers.js/-/transducers.js-0.3.0.tgz#5cd30bbadc7a4ccd6720b3121cd7dcc91e90827b"
+  integrity sha512-ZAHByx9pi7o0fLvGMGJbvtETHXINIAb37sqy2Pl4UgbAwwyJPrypKEqroPSUccHQW2uby862vYOBSzJnJI5YoA==
+
+"@types/zen-observable@^0.8.0":
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/@types/zen-observable/-/zen-observable-0.8.0.tgz#8b63ab7f1aa5321248aad5ac890a485656dcea4d"
+  integrity sha512-te5lMAWii1uEJ4FwLjzdlbw3+n0FZNOvFXHxQDKeT0dilh7HOzdMzV2TrJVUzq8ep7J4Na8OUYPRLSQkJHAlrg==
+
 abab@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/abab/-/abab-2.0.0.tgz#aba0ab4c5eee2d4c79d3487d85450fb2376ebb0f"
@@ -4874,6 +4884,11 @@ type-check@~0.3.2:
   integrity sha1-WITKtRLPHTVeP7eE8wgEsrUg23I=
   dependencies:
     prelude-ls "~1.1.2"
+
+typescript@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.1.1.tgz#3362ba9dd1e482ebb2355b02dfe8bcd19a2c7c96"
+  integrity sha512-Veu0w4dTc/9wlWNf2jeRInNodKlcdLgemvPsrNpfu5Pq39sgfFjvIIgTsvUHCoLBnMhPoUA+tFxsXjU6VexVRQ==
 
 uglify-js@^3.1.4:
   version "3.4.9"
