@@ -4,7 +4,7 @@ import LiveSet from '.';
 
 export default function merge<T>(liveSets: Array<LiveSet<T>>): LiveSet<T> {
   return new LiveSet({
-    scheduler: liveSets[0] ? liveSets[0].getScheduler() : null,
+    scheduler: liveSets[0] ? liveSets[0].getScheduler() : undefined,
     read() {
       const s = new Set();
       liveSets.forEach(liveSet => {
