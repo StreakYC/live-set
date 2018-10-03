@@ -1,6 +1,6 @@
 {
   "name": "live-set",
-  "version": "0.4.4",
+  "version": "1.0.0",
   "description": "Class representing a changing and transformable collection of items.",
   "main": "index.js",
   "sideEffects": false,
