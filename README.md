@@ -540,6 +540,10 @@ which uses the same convention.
 The additional checks make sure that the Set passed to `setValues` and the Set
 returned from the `values()` method are not modified.
 
+Browser support for `Map`, `Set`, and `Promise` is required. Load a polyfill
+for these (such as [@babel/polyfill](https://babeljs.io/docs/en/babel-polyfill))
+if you need to support browsers that don't natively support these.
+
 ## Types
 
 [Flow](https://flowtype.org/) type declarations for this module are included!
