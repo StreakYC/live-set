@@ -21,6 +21,8 @@ test('works', async () => {
 
   const sub = toValueObservable(liveSet).subscribe(next);
 
+  await delay(0);
+
   if (!controller) throw new Error();
   controller.add(7);
 

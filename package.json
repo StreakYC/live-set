@@ -37,7 +37,7 @@
     "asap": "^2.0.5",
     "envify": "^4.0.0",
     "symbol-observable": "^1.0.4",
-    "zen-observable": "^0.6.0"
+    "zen-observable": "^0.8.9"
   },
   "devDependencies": {
     "@babel/cli": "^7.0.0",
