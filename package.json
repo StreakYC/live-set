@@ -31,6 +31,9 @@
       "envify"
     ]
   },
+  "prettier": {
+    "singleQuote": true
+  },
   "dependencies": {
     "@babel/runtime": "^7.0.0",
     "@types/transducers.js": "^0.3.0",
@@ -55,9 +58,27 @@
     "eslint-plugin-flowtype": "^2.50.0",
     "flow-bin": "^0.82.0",
     "flow-copy-source": "^2.0.2",
+    "husky": "^2.3.0",
     "jest": "^23.5.0",
+    "lint-staged": "^8.1.7",
     "pdelay": "^2.0.0",
+    "prettier": "^1.17.1",
     "transducers.js": "^0.3.2",
     "typescript": "^3.1.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,ts,css,json,md}": [
+      "prettier --write",
+      "git add"
+    ],
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
   }
 }
