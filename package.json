@@ -5,7 +5,7 @@
   "main": "index.js",
   "sideEffects": false,
   "scripts": {
-    "prepare": "rm -f *.js *.flow && babel -s inline -d ./ src/ --ignore '**/*.test.js' && flow-copy-source -v src . --ignore '*.test.*'",
+    "prepare": "rm -f *.js *.map *.flow && babel -s true -d ./ src/ --ignore '**/*.test.js' && flow-copy-source -v src . --ignore '*.test.*'",
     "test": "yarn run lint && flow check && jest && tsc",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix"
