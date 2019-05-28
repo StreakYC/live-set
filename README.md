@@ -60,7 +60,7 @@ function createElementChildLiveSet(element) {
         });
       }
       const observer = new MutationObserver(changesHandler);
-      observer.observe(element, {childList: true});
+      observer.observe(element, { childList: true });
 
       // The listen function may return an unsubscribe callback, or an object
       // containing an unsubscribe callback and a pullChanges callback.
@@ -119,7 +119,9 @@ import flatMap from 'live-set/flatMap';
 
 // This liveset will contain all of the children of the elements in the
 // bodyChildrenNoDivs liveset, and it will stay up-to-date!
-const bodyChildrenNoDivsChildren = flatMap(bodyChildrenNoDivs, el => createElementChildLiveSet(el));
+const bodyChildrenNoDivsChildren = flatMap(bodyChildrenNoDivs, el =>
+  createElementChildLiveSet(el)
+);
 // Example output:
 // Set { <nav>, <h1>, <p>, <p>, <p>, <div>, <div> }
 ```
@@ -161,14 +163,11 @@ const i1 = new LiveSet({
 
 // i2 is a liveset which always contains the same values as i1 but multiplied
 // by 10.
-const i2 = map(i1, x => x*10);
+const i2 = map(i1, x => x * 10);
 
 // final is a liveset which always contains all of the values of i2 and the
 // value 1.
-const final = merge([
-  i2,
-  LiveSet.constant(new Set([1]))
-]);
+const final = merge([i2, LiveSet.constant(new Set([1]))]);
 
 const subscription = final.subscribe({
   start() {
@@ -215,7 +214,7 @@ import LiveSet from 'live-set';
 import map from 'live-set/map';
 
 const input = LiveSet.constant(new Set([5, 6]));
-const mapped = map(input, x => ({value: x}));
+const mapped = map(input, x => ({ value: x }));
 
 const firstValue1 = Array.from(mapped.values())[0];
 console.log(firstValue1); // {value: 5}
@@ -236,7 +235,7 @@ import LiveSet from 'live-set';
 import map from 'live-set/map';
 
 const input = LiveSet.constant(new Set([5, 6]));
-const mapped = map(input, x => ({value: x}));
+const mapped = map(input, x => ({ value: x }));
 mapped.subscribe({});
 
 const firstValue1 = Array.from(mapped.values())[0];
@@ -249,6 +248,7 @@ console.log(firstValue1 === firstValue2); // true
 ### Core
 
 #### LiveSet::constructor
+
 `LiveSet<T>::constructor({scheduler?, read, listen})`
 
 The constructor must be passed an object containing `read` and `listen`
@@ -289,6 +289,7 @@ function return the LiveSetSubscription, which has unsubscribe and pullChanges
 methods.
 
 #### LiveSet.constant
+
 `LiveSet.constant<T>(values: Set<T>, options?: Object): LiveSet<T>`
 
 This creates a LiveSet with a set of values that will never change. The LiveSet
@@ -299,6 +300,7 @@ The optional `options` parameter may have a `scheduler` property specifying the
 Scheduler instance to use.
 
 #### LiveSet.active
+
 `LiveSet.active<T>(initialValues?: Set<T>, options?: Object): {liveSet: LiveSet<T>, controller: LiveSetController<T>}`
 
 This is a convenience method to create a LiveSet that starts out in the
@@ -319,11 +321,13 @@ This function is inspired by the nonstandard "Promise.defer()" function that
 some Promise libraries have implemented.
 
 #### LiveSet.defaultScheduler
+
 `LiveSet.defaultScheduler: Scheduler`
 
 This is the Scheduler object used by default for new LiveSets.
 
 #### LiveSet::isEnded
+
 `LiveSet<T>::isEnded(): boolean`
 
 This returns whether the LiveSet is in the ended state. LiveSets in the ended
@@ -331,12 +335,14 @@ state will never have their values change, deliver any change notifications, or
 keep references to their subscribers.
 
 #### LiveSet::getScheduler
+
 `LiveSet<T>::getScheduler(): Scheduler`
 
 Retrieve the Scheduler object that a LiveSet was instantiated with. This may be
 used so that a new LiveSet can be instantiated with the same Scheduler.
 
 #### LiveSet::values
+
 `LiveSet<T>::values(): Set<T>`
 
 This returns a Set containing all of the LiveSet's current values at the time
@@ -350,6 +356,7 @@ active, then this will trigger the `pullChanges` function returned by the
 constructor's `listen` function if present.
 
 #### LiveSet::subscribe
+
 `LiveSet<T>::subscribe(observer): LiveSetSubscription`
 
 This function is used to subscribe to change notifications from the LiveSet.
@@ -384,18 +391,21 @@ This function is intended to be compatible with the Observable subscribe method
 of the [Observable proposal](https://tc39.github.io/proposal-observable/).
 
 #### LiveSetSubscription::closed
+
 `LiveSetSubscription::closed: boolean`
 
 This is true if the LiveSet has ended, or the subscription has been
 unsubscribed from.
 
 #### LiveSetSubscription::unsubscribe
+
 `LiveSetSubscription::unsubscribe(): void`
 
 This immediately unsubscribes the subscription. None of the observer functions
 will be called after unsubscription.
 
 #### LiveSetSubscription::pullChanges
+
 `LiveSetSubscription::pullChanges(): void`
 
 This will cause any queued change notifications to be immediately flushed to
@@ -424,12 +434,14 @@ scheduler as the input LiveSet or the same as the first input LiveSet if
 multiple are given.
 
 #### live-set/filter
+
 `filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): LiveSet<T>`
 
 This creates a LiveSet that contains only the values of the input `liveSet`
 for which they given callback function returns a truthy value for.
 
 #### live-set/map
+
 `map<T,U>(liveSet: LiveSet<T>, cb: (value: T) => U): LiveSet<U>`
 
 This creates a LiveSet that contains the result of `cb(value)` for each value
@@ -441,6 +453,7 @@ The behavior is undefined if the callback returns the same value for distinct
 input values present in the input `liveSet` at the same time.
 
 #### live-set/transduce
+
 `transduce(liveSet: LiveSet<any>, transducer: Function): LiveSet<any>`
 
 This creates a new LiveSet based on a transformation implemented by the given
@@ -468,6 +481,7 @@ The behavior is undefined if the transducer outputs equal values to be present
 in the output LiveSet at the same time.
 
 #### live-set/merge
+
 `merge<T>(liveSets: Array<LiveSet<T>>): LiveSet<T>`
 
 This function takes an array of LiveSets and returns a single LiveSet
@@ -477,6 +491,7 @@ The behavior is undefined if multiple input LiveSets contain the same value at
 the same time.
 
 #### live-set/flatMap
+
 `flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => LiveSet<U>): LiveSet<U>`
 
 This function calls the given callback function for each value in the input
@@ -490,6 +505,7 @@ The behavior is undefined if any of the LiveSets returned by the callback
 contain equal values at the same time.
 
 #### live-set/flatMapR
+
 `flatMapR<T,U>(liveSet: LiveSet<T>, cb: (value: T) => LiveSet<U>): LiveSet<U>`
 
 This function is the same as `flatMap`, but it should be used for fully correct
@@ -499,6 +515,7 @@ to be added to the input set (and therefore potentially more items to the
 output set again).
 
 #### live-set/mapWithRemoval
+
 `mapWithRemoval<T,U>(input: LiveSet<T>, cb: (value: T, removal: Promise<void>) => U): LiveSet<U>`
 
 This is similar to the live-set/map function, but the callback is also passed a
@@ -510,6 +527,7 @@ The behavior is undefined if the callback returns the same value for distinct
 input values present in the input `liveSet` at the same time.
 
 #### live-set/toValueObservable
+
 `toValueObservable<T>(liveSet: LiveSet<T>): Observable<{value: T, removal: Promise<void>}>`
 
 This will return an [Observable](https://tc39.github.io/proposal-observable/)
@@ -518,6 +536,7 @@ every `value` currently in the input `liveSet` where `removal` is a Promise
 which will resolve after the `value` is removed from the input `liveSet`.
 
 ### live-set/Scheduler
+
 `Scheduler::constructor()`
 
 A scheduler object has a `schedule(callback)` method which schedules a callback

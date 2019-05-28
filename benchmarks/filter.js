@@ -8,11 +8,11 @@ import benchmarkLiveSet from './lib/benchmarkLiveSet';
 
 process.env.NODE_ENV = 'production';
 
-let {liveSet, controller} = LiveSet.active(new Set([1,2,3,4,5]));
+let { liveSet, controller } = LiveSet.active(new Set([1, 2, 3, 4, 5]));
 
 console.time('filter setup');
-for (let i=0; i<200; i++) {
-  liveSet = filter(liveSet, x => x%2 === 0);
+for (let i = 0; i < 200; i++) {
+  liveSet = filter(liveSet, x => x % 2 === 0);
 }
 console.timeEnd('filter setup');
 

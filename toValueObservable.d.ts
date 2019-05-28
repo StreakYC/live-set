@@ -6,4 +6,6 @@ export type ValueWithRemoval<T> = {
   removal: Promise<void>;
 };
 
-export default function toValueObservable<T>(liveSet: LiveSet<T>): Observable<ValueWithRemoval<T>>;
+export default function toValueObservable<T>(
+  liveSet: LiveSet<T>
+): Observable<ValueWithRemoval<T>>;

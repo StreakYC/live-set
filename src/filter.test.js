@@ -8,15 +8,15 @@ test('works', async () => {
   let lsStep;
   const lsCleanup = jest.fn();
   const ls = new LiveSet({
-    read: () => new Set([{x:1}, {x:2}]),
+    read: () => new Set([{ x: 1 }, { x: 2 }]),
     listen(setValues, controller) {
       setValues(this.read());
       const originalValues = Array.from(ls.values());
-      controller.add({x:3});
+      controller.add({ x: 3 });
       lsStep = () => {
         controller.remove(originalValues[0]);
         controller.remove(originalValues[1]);
-        controller.add({x:4});
+        controller.add({ x: 4 });
       };
       return lsCleanup;
     }
@@ -25,11 +25,8 @@ test('works', async () => {
   const filterFn = jest.fn(x => x.x % 2 === 0);
   const filteredLs = filter(ls, filterFn);
 
-  expect(Array.from(filteredLs.values())).toEqual([{x:2}]);
-  expect(filterFn.mock.calls).toEqual([
-    [{x:1}],
-    [{x:2}]
-  ]);
+  expect(Array.from(filteredLs.values())).toEqual([{ x: 2 }]);
+  expect(filterFn.mock.calls).toEqual([[{ x: 1 }], [{ x: 2 }]]);
 
   const next = jest.fn();
   const sub = filteredLs.subscribe(next);
@@ -38,14 +35,14 @@ test('works', async () => {
   lsStep();
   await delay(0);
 
-  expect(Array.from(filteredLs.values())).toEqual([{x:4}]);
+  expect(Array.from(filteredLs.values())).toEqual([{ x: 4 }]);
   expect(filterFn.mock.calls).toEqual([
-    [{x:1}],
-    [{x:2}],
-    [{x:1}],
-    [{x:2}],
-    [{x:3}],
-    [{x:4}]
+    [{ x: 1 }],
+    [{ x: 2 }],
+    [{ x: 1 }],
+    [{ x: 2 }],
+    [{ x: 3 }],
+    [{ x: 4 }]
   ]);
   expect(lsCleanup).toHaveBeenCalledTimes(0);
 
@@ -56,23 +53,23 @@ test('works', async () => {
 });
 
 test('read behavior consistent while stream is active or inactive', async () => {
-  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
-  const filteredLs = filter(liveSet, x => x%2 === 0);
+  const { liveSet, controller } = LiveSet.active(new Set([5, 6]));
+  const filteredLs = filter(liveSet, x => x % 2 === 0);
 
   expect(Array.from(filteredLs.values())).toEqual([6]);
   controller.add(7);
   controller.add(8);
-  expect(Array.from(filteredLs.values())).toEqual([6,8]);
+  expect(Array.from(filteredLs.values())).toEqual([6, 8]);
   filteredLs.subscribe({});
   controller.add(9);
   controller.add(10);
-  expect(Array.from(filteredLs.values())).toEqual([6,8,10]);
+  expect(Array.from(filteredLs.values())).toEqual([6, 8, 10]);
   await delay(0);
-  expect(Array.from(filteredLs.values())).toEqual([6,8,10]);
+  expect(Array.from(filteredLs.values())).toEqual([6, 8, 10]);
 });
 
 test('filter by Boolean', () => {
-  const ls: LiveSet<?number> = LiveSet.constant(new Set([5,null,7]));
+  const ls: LiveSet<?number> = LiveSet.constant(new Set([5, null, 7]));
   const filteredLs: LiveSet<number> = filter(ls, Boolean);
-  expect(Array.from(filteredLs.values())).toEqual([5,7]);
+  expect(Array.from(filteredLs.values())).toEqual([5, 7]);
 });

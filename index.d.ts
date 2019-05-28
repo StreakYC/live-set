@@ -1,9 +1,9 @@
 import Scheduler from './Scheduler';
 
 export type LiveSetChangeRecord<T> =
-  {type: 'add', value: T} |
-  {type: 'remove', value: T} |
-  {type: 'end'};
+  | { type: 'add'; value: T }
+  | { type: 'remove'; value: T }
+  | { type: 'end' };
 
 export interface LiveSetController<T> {
   closed: boolean;
@@ -24,10 +24,12 @@ export interface LiveSetInit<T> {
   listen(
     setValues: { (values: Set<T>): void },
     controller: LiveSetController<T>
-  ): void|ListenHandler|(()=>void);
+  ): void | ListenHandler | (() => void);
 }
 
-export type LiveSetSubscriber<T> = (changes: ReadonlyArray<LiveSetChangeRecord<T>>) => void;
+export type LiveSetSubscriber<T> = (
+  changes: ReadonlyArray<LiveSetChangeRecord<T>>
+) => void;
 
 export interface LiveSetSubscription {
   closed: boolean;
@@ -47,9 +49,15 @@ export default class LiveSet<T> {
 
   constructor(init: LiveSetInit<T>);
 
-  static active<T>(initialValues: null|void|Set<T>, options?: null|{scheduler?: Scheduler}): {liveSet: LiveSet<T>, controller: LiveSetController<T>};
+  static active<T>(
+    initialValues: null | void | Set<T>,
+    options?: null | { scheduler?: Scheduler }
+  ): { liveSet: LiveSet<T>; controller: LiveSetController<T> };
 
-  static constant<T>(values: Set<T>, options?: null|{scheduler?: Scheduler}): LiveSet<T>;
+  static constant<T>(
+    values: Set<T>,
+    options?: null | { scheduler?: Scheduler }
+  ): LiveSet<T>;
 
   values(): Set<T>;
 
@@ -58,7 +66,11 @@ export default class LiveSet<T> {
   getScheduler(): Scheduler;
 
   subscribe(observer: LiveSetObserver<T>): LiveSetSubscription;
-  subscribe(onNext: LiveSetSubscriber<T>, onError?: null|((err: any) => void), onComplete?: null|(() => void)): LiveSetSubscription;
+  subscribe(
+    onNext: LiveSetSubscriber<T>,
+    onError?: null | ((err: any) => void),
+    onComplete?: null | (() => void)
+  ): LiveSetSubscription;
 
   // [Symbol.observable]: any;
 }

@@ -35,7 +35,7 @@ test('flush', () => {
 test('big queue', () => {
   let c = 0;
   const s = new Scheduler();
-  for (let i=0; i<3000; i++) {
+  for (let i = 0; i < 3000; i++) {
     s.schedule(() => {
       expect(c++).toBe(i);
     });
@@ -48,7 +48,7 @@ test('big queue', () => {
 test('recursive flush in big queue', () => {
   let c = 0;
   const s = new Scheduler();
-  for (let i=0; i<5000; i++) {
+  for (let i = 0; i < 5000; i++) {
     s.schedule(() => {
       expect(c++).toBe(i);
       s.flush();

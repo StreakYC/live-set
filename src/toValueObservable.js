@@ -4,21 +4,21 @@ import LiveSet from '.';
 import Observable from 'zen-observable';
 
 export type ValueWithRemoval<+T> = {
-  +value: T;
-  +removal: Promise<void>;
+  +value: T,
+  +removal: Promise<void>
 };
 
 export default function toValueObservable<T>(liveSet: LiveSet<T>) {
   return new Observable(observer => {
-    const resolvers: Map<T, ()=>void> = new Map();
+    const resolvers: Map<T, () => void> = new Map();
 
     function addedItem(value: T) {
       let resolve;
       const removal: Promise<void> = new Promise(_resolve => {
         resolve = _resolve;
       });
-      resolvers.set(value, (resolve:any));
-      const valueWithRemoval: ValueWithRemoval<T> = {value, removal};
+      resolvers.set(value, (resolve: any));
+      const valueWithRemoval: ValueWithRemoval<T> = { value, removal };
       observer.next(valueWithRemoval);
     }
 

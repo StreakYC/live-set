@@ -15,10 +15,16 @@ const arrayXf = {
   }
 };
 
-export default function transduce(liveSet: LiveSet<any>, transducer: Function): LiveSet<any> {
-  function step(xform: Object, inputValue: any): {
-    outputValues: Array<any>;
-    addsComplete: boolean;
+export default function transduce(
+  liveSet: LiveSet<any>,
+  transducer: Function
+): LiveSet<any> {
+  function step(
+    xform: Object,
+    inputValue: any
+  ): {
+    outputValues: Array<any>,
+    addsComplete: boolean
   } {
     let addsComplete = false;
     let outputValues;
@@ -36,10 +42,10 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
   }
 
   type ValuesAndContext = {
-    values: Set<any>;
-    inputToOutputValues: Map<any, Array<any>>;
-    xform: Object;
-    addsComplete: boolean;
+    values: Set<any>,
+    inputToOutputValues: Map<any, Array<any>>,
+    xform: Object,
+    addsComplete: boolean
   };
 
   function valuesAndContext(): ValuesAndContext {
@@ -48,9 +54,9 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
     let addsComplete = false;
     const values = new Set(xform['@@transducer/init']());
     for (let value of liveSet.values()) {
-      const {outputValues, addsComplete: _addsComplete} = step(xform, value);
+      const { outputValues, addsComplete: _addsComplete } = step(xform, value);
       inputToOutputValues.set(value, outputValues);
-      for (let i=0,len=outputValues.length; i<len; i++) {
+      for (let i = 0, len = outputValues.length; i < len; i++) {
         values.add(outputValues[i]);
       }
       if (_addsComplete) {
@@ -83,14 +89,17 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
           addsComplete = ret.addsComplete;
         },
         next(changes) {
-          for (let i=0,len=changes.length; i<len; i++) {
+          for (let i = 0, len = changes.length; i < len; i++) {
             const change = changes[i];
             if (change.type === 'add') {
               if (!addsComplete) {
-                const {value} = change;
-                const {outputValues, addsComplete: _addsComplete} = step(xform, value);
+                const { value } = change;
+                const { outputValues, addsComplete: _addsComplete } = step(
+                  xform,
+                  value
+                );
                 inputToOutputValues.set(value, outputValues);
-                for (let i=0,len=outputValues.length; i<len; i++) {
+                for (let i = 0, len = outputValues.length; i < len; i++) {
                   controller.add(outputValues[i]);
                 }
                 if (_addsComplete) {
@@ -101,7 +110,7 @@ export default function transduce(liveSet: LiveSet<any>, transducer: Function): 
                 }
               }
             } else if (change.type === 'remove') {
-              const {value} = change;
+              const { value } = change;
               const list = inputToOutputValues.get(value);
               if (!list) throw new Error('value had not been added');
               list.forEach(transformedValue => {

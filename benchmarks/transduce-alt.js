@@ -9,13 +9,13 @@ import benchmarkLiveSet from './lib/benchmarkLiveSet';
 
 process.env.NODE_ENV = 'production';
 
-let {liveSet, controller} = LiveSet.active(new Set([1,2,3,4,5]));
+let { liveSet, controller } = LiveSet.active(new Set([1, 2, 3, 4, 5]));
 
-const evens = x => x%2 === 0;
-const mapper = x => x+2;
+const evens = x => x % 2 === 0;
+const mapper = x => x + 2;
 
 console.time('setup');
-for (let i=0; i<200; i++) {
+for (let i = 0; i < 200; i++) {
   liveSet = map(filter(liveSet, evens), mapper);
 }
 console.timeEnd('setup');

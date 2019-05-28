@@ -18,7 +18,7 @@ for (let flatMapX of [flatMap, flatMapR]) {
 
       const lsCleanup = jest.fn();
       const ls = new LiveSet({
-        read: () => new Set([1,2]),
+        read: () => new Set([1, 2]),
         listen(setValues, controller) {
           setValues(this.read());
           controllers.push(controller);
@@ -31,31 +31,35 @@ for (let flatMapX of [flatMap, flatMapR]) {
 
       let ls2Callbacks = new Set();
       const ls2Cleanup = jest.fn();
-      const ls2 = flatMapX(ls, value =>
-        new LiveSet({
-          read: () => new Set([value*10]),
-          listen(setValues, controller) {
-            setValues(this.read());
-            controllers.push(controller);
+      const ls2 = flatMapX(
+        ls,
+        value =>
+          new LiveSet({
+            read: () => new Set([value * 10]),
+            listen(setValues, controller) {
+              setValues(this.read());
+              controllers.push(controller);
 
-            const cb = () => {
-              controller.add(value*100);
-              controller.add(value*1000);
-              controller.remove(value*10);
-            };
-            ls2Callbacks.add(cb);
-            return () => {
-              ls2Callbacks.delete(cb);
-              ls2Cleanup();
-            };
-          }
-        })
+              const cb = () => {
+                controller.add(value * 100);
+                controller.add(value * 1000);
+                controller.remove(value * 10);
+              };
+              ls2Callbacks.add(cb);
+              return () => {
+                ls2Callbacks.delete(cb);
+                ls2Cleanup();
+              };
+            }
+          })
       );
 
       expect(Array.from(ls2.values())).toEqual([10, 20]);
 
-      const next = jest.fn(), error = jest.fn(), complete = jest.fn();
-      ls2.subscribe({next, error, complete});
+      const next = jest.fn(),
+        error = jest.fn(),
+        complete = jest.fn();
+      ls2.subscribe({ next, error, complete });
 
       expect(Array.from(ls2.values())).toEqual([20, 30]);
       expect(next).toHaveBeenCalledTimes(0);
@@ -67,7 +71,7 @@ for (let flatMapX of [flatMap, flatMapR]) {
       await delay(0); // Let promises resolve
 
       expect(next.mock.calls).toEqual([
-        [[{type: 'remove', value: 20}, {type: 'add', value: 40}]]
+        [[{ type: 'remove', value: 20 }, { type: 'add', value: 40 }]]
       ]);
       expect(error).toHaveBeenCalledTimes(0);
       expect(complete).toHaveBeenCalledTimes(0);
@@ -109,81 +113,91 @@ for (let flatMapX of [flatMap, flatMapR]) {
     });
 
     test('handles removal of initial values', async () => {
-      const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+      const { liveSet, controller } = LiveSet.active(new Set([5, 6]));
 
-      const fls = flatMapX(liveSet, x => new LiveSet({
-        read: () => new Set([{x}]),
-        listen(setValues) {
-          setValues(this.read());
-        }
-      }));
+      const fls = flatMapX(
+        liveSet,
+        x =>
+          new LiveSet({
+            read: () => new Set([{ x }]),
+            listen(setValues) {
+              setValues(this.read());
+            }
+          })
+      );
 
       const next = jest.fn();
       fls.subscribe(next);
 
-      expect(Array.from(fls.values())).toEqual([{x: 5}, {x: 6}]);
+      expect(Array.from(fls.values())).toEqual([{ x: 5 }, { x: 6 }]);
       controller.remove(5);
       await delay(0);
-      expect(Array.from(fls.values())).toEqual([{x: 6}]);
+      expect(Array.from(fls.values())).toEqual([{ x: 6 }]);
     });
 
     test('read behavior consistent while stream is active or inactive', async () => {
-      const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+      const { liveSet, controller } = LiveSet.active(new Set([5, 6]));
 
       let subControllers = [];
-      const fmLs = flatMapX(liveSet, x => new LiveSet({
-        read: () => new Set([x*10]),
-        listen(setValues, controller) {
-          setValues(this.read());
-          subControllers.push(controller);
-          return () => {
-            subControllers = subControllers.filter(c => c !== controller);
-          };
-        }
-      }));
+      const fmLs = flatMapX(
+        liveSet,
+        x =>
+          new LiveSet({
+            read: () => new Set([x * 10]),
+            listen(setValues, controller) {
+              setValues(this.read());
+              subControllers.push(controller);
+              return () => {
+                subControllers = subControllers.filter(c => c !== controller);
+              };
+            }
+          })
+      );
 
-      expect(Array.from(fmLs.values())).toEqual([50,60]);
+      expect(Array.from(fmLs.values())).toEqual([50, 60]);
       controller.add(7);
-      expect(Array.from(fmLs.values())).toEqual([50,60,70]);
+      expect(Array.from(fmLs.values())).toEqual([50, 60, 70]);
       fmLs.subscribe({});
       controller.add(8);
-      expect(Array.from(fmLs.values())).toEqual([50,60,70,80]);
+      expect(Array.from(fmLs.values())).toEqual([50, 60, 70, 80]);
       await delay(0);
-      expect(Array.from(fmLs.values())).toEqual([50,60,70,80]);
+      expect(Array.from(fmLs.values())).toEqual([50, 60, 70, 80]);
 
       subControllers[0].add(101);
-      expect(Array.from(fmLs.values())).toEqual([50,60,70,80,101]);
+      expect(Array.from(fmLs.values())).toEqual([50, 60, 70, 80, 101]);
       await delay(0);
-      expect(Array.from(fmLs.values())).toEqual([50,60,70,80,101]);
+      expect(Array.from(fmLs.values())).toEqual([50, 60, 70, 80, 101]);
     });
 
     test('handle constant', async () => {
-      const {liveSet, controller} = LiveSet.active(new Set([5,6]));
-      const fmLs = flatMapX(liveSet, x => LiveSet.constant(new Set([x, x*10])));
-      expect(Array.from(fmLs.values())).toEqual([5,50,6,60]);
+      const { liveSet, controller } = LiveSet.active(new Set([5, 6]));
+      const fmLs = flatMapX(liveSet, x =>
+        LiveSet.constant(new Set([x, x * 10]))
+      );
+      expect(Array.from(fmLs.values())).toEqual([5, 50, 6, 60]);
 
       const next = jest.fn();
       fmLs.subscribe(next);
-      expect(Array.from(fmLs.values())).toEqual([5,50,6,60]);
+      expect(Array.from(fmLs.values())).toEqual([5, 50, 6, 60]);
 
       controller.add(7);
       await delay(0);
       expect(next.mock.calls).toEqual([
-        [[{type: 'add', value: 7}, {type: 'add', value: 70}]]
+        [[{ type: 'add', value: 7 }, { type: 'add', value: 70 }]]
       ]);
-      expect(Array.from(fmLs.values())).toEqual([5,50,6,60,7,70]);
+      expect(Array.from(fmLs.values())).toEqual([5, 50, 6, 60, 7, 70]);
 
       controller.remove(5);
       await delay(0);
       expect(next.mock.calls).toEqual([
-        [[{type: 'add', value: 7}, {type: 'add', value: 70}]],
-        [[{type: 'remove', value: 5}, {type: 'remove', value: 50}]]
+        [[{ type: 'add', value: 7 }, { type: 'add', value: 70 }]],
+        [[{ type: 'remove', value: 5 }, { type: 'remove', value: 50 }]]
       ]);
-      expect(Array.from(fmLs.values())).toEqual([6,60,7,70]);
+      expect(Array.from(fmLs.values())).toEqual([6, 60, 7, 70]);
     });
 
     test('add in pullChanges is not double-counted in pool', async () => {
-      const {liveSet: s1, controller: c1} = LiveSet.active();
+      const { liveSet: s1, controller: c1 } = LiveSet.active();
       const fm1 = flatMapX(s1, s => s);
 
       const fm1Next = jest.fn();
@@ -201,14 +215,14 @@ for (let flatMapX of [flatMap, flatMapR]) {
             pullChanges() {
               if (!hasPulled) {
                 hasPulled = true;
-                controller.add({original: 5});
+                controller.add({ original: 5 });
               }
             }
           };
         }
       });
 
-      const fooMapper = jest.fn(x => ({transformed: x}));
+      const fooMapper = jest.fn(x => ({ transformed: x }));
       c1.add(map(foo, fooMapper));
 
       expect(fooMapper.mock.calls).toEqual([]);
@@ -221,17 +235,15 @@ for (let flatMapX of [flatMap, flatMapR]) {
 
       fm1Sub.pullChanges();
 
-      expect(fooMapper.mock.calls).toEqual([
-        [{original: 5}]
-      ]);
+      expect(fooMapper.mock.calls).toEqual([[{ original: 5 }]]);
       expect(fm1Next.mock.calls).toEqual([
-        [[{type: 'add', value: {transformed: {original: 5}}}]]
+        [[{ type: 'add', value: { transformed: { original: 5 } } }]]
       ]);
     });
 
     test('two dependent pools', () => {
-      const {liveSet: s1, controller: c1} = LiveSet.active();
-      const {liveSet: s2, controller: c2} = LiveSet.active();
+      const { liveSet: s1, controller: c1 } = LiveSet.active();
+      const { liveSet: s2, controller: c2 } = LiveSet.active();
       const fm1 = flatMapX(s1, s => s);
       const fm2 = flatMapX(s2, s => s);
 
@@ -242,9 +254,9 @@ for (let flatMapX of [flatMap, flatMapR]) {
       const sub2Next = jest.fn();
       const sub2 = fm2.subscribe(sub2Next);
 
-      const fm2Mapper = jest.fn(x => ({transformed: x}));
+      const fm2Mapper = jest.fn(x => ({ transformed: x }));
       c1.add(map(fm2, fm2Mapper));
-      c2.add(LiveSet.constant(new Set([{original: 5}])));
+      c2.add(LiveSet.constant(new Set([{ original: 5 }])));
 
       expect(fm2Mapper.mock.calls).toEqual([]);
       expect(output1Mapper.mock.calls).toEqual([]);
@@ -254,30 +266,32 @@ for (let flatMapX of [flatMap, flatMapR]) {
       sub1.pullChanges();
       sub2.pullChanges();
 
-      expect(fm2Mapper.mock.calls).toEqual([
-        [{original: 5}]
-      ]);
+      expect(fm2Mapper.mock.calls).toEqual([[{ original: 5 }]]);
       expect(output1Mapper.mock.calls).toEqual([
-        [{transformed: {original: 5}}]
+        [{ transformed: { original: 5 } }]
       ]);
       expect(sub1Next.mock.calls).toEqual([
-        [[{type: 'add', value: {transformed: {original: 5}}}]]
+        [[{ type: 'add', value: { transformed: { original: 5 } } }]]
       ]);
       expect(sub2Next.mock.calls).toEqual([
-        [[{type: 'add', value: {original: 5}}]]
+        [[{ type: 'add', value: { original: 5 } }]]
       ]);
     });
 
     test('ended input liveset', async () => {
       const input = LiveSet.constant(new Set([5]));
       let controller;
-      const fmLs = flatMapX(input, x => new LiveSet({
-        read: () => new Set([x]),
-        listen(setValues, _controller) {
-          setValues(this.read());
-          controller = _controller;
-        }
-      }));
+      const fmLs = flatMapX(
+        input,
+        x =>
+          new LiveSet({
+            read: () => new Set([x]),
+            listen(setValues, _controller) {
+              setValues(this.read());
+              controller = _controller;
+            }
+          })
+      );
       const next = jest.fn();
       expect(controller).toBe(undefined);
       const sub = fmLs.subscribe(next);
@@ -291,15 +305,21 @@ for (let flatMapX of [flatMap, flatMapR]) {
     });
 
     test('input liveset ends after', async () => {
-      const {liveSet: input, controller: inputController} = LiveSet.active(new Set([5]));
+      const { liveSet: input, controller: inputController } = LiveSet.active(
+        new Set([5])
+      );
       let controller;
-      const fmLs = flatMapX(input, x => new LiveSet({
-        read: () => new Set([x]),
-        listen(setValues, _controller) {
-          setValues(this.read());
-          controller = _controller;
-        }
-      }));
+      const fmLs = flatMapX(
+        input,
+        x =>
+          new LiveSet({
+            read: () => new Set([x]),
+            listen(setValues, _controller) {
+              setValues(this.read());
+              controller = _controller;
+            }
+          })
+      );
       const next = jest.fn();
       expect(controller).toBe(undefined);
       const sub = fmLs.subscribe(next);

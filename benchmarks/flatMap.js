@@ -8,10 +8,10 @@ import benchmarkLiveSet from './lib/benchmarkLiveSet';
 
 process.env.NODE_ENV = 'production';
 
-let {liveSet, controller} = LiveSet.active(new Set([1,2,3,4,5]));
+let { liveSet, controller } = LiveSet.active(new Set([1, 2, 3, 4, 5]));
 
 const flatMapFn = x => {
-  const s = new Set([x+1]);
+  const s = new Set([x + 1]);
   return new LiveSet({
     read: () => s,
     listen(setValues) {
@@ -21,7 +21,7 @@ const flatMapFn = x => {
 };
 
 console.time('setup');
-for (let i=0; i<100; i++) {
+for (let i = 0; i < 100; i++) {
   liveSet = flatMap(liveSet, flatMapFn);
 }
 console.timeEnd('setup');

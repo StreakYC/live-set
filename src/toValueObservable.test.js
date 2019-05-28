@@ -9,7 +9,7 @@ test('works', async () => {
   let controller;
   const cleanup = jest.fn();
   const liveSet = new LiveSet({
-    read: () => new Set([5,6]),
+    read: () => new Set([5, 6]),
     listen(setValues, _controller) {
       setValues(this.read());
       controller = _controller;
@@ -26,13 +26,13 @@ test('works', async () => {
   if (!controller) throw new Error();
   controller.add(7);
 
-  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5, 6]);
   await delay(0);
-  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6,7]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5, 6, 7]);
   controller.add(8);
-  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6,7]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5, 6, 7]);
   await delay(0);
-  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6,7,8]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5, 6, 7, 8]);
 
   const removal6 = jest.fn();
   next.mock.calls[1][0].removal.then(removal6);
@@ -55,7 +55,7 @@ test('works', async () => {
   expect(sub.closed).toBe(true);
   expect(cleanup).toHaveBeenCalledTimes(1);
 
-  expect(next.mock.calls.map(x => x[0].value)).toEqual([5,6,7,8]);
+  expect(next.mock.calls.map(x => x[0].value)).toEqual([5, 6, 7, 8]);
 
   const removal8 = jest.fn();
   next.mock.calls[3][0].removal.then(removal8);

@@ -1,21 +1,26 @@
 /* @flow */
 /* eslint-disable no-console */
 
-import type LiveSet, {LiveSetController} from '../../src';
+import type LiveSet, { LiveSetController } from '../../src';
 
-export default async function benchmarkLiveSet(liveSet: LiveSet<any>, controller: LiveSetController<number>, itemsToInsert: number=20000, skipReads: boolean=false) {
+export default async function benchmarkLiveSet(
+  liveSet: LiveSet<any>,
+  controller: LiveSetController<number>,
+  itemsToInsert: number = 20000,
+  skipReads: boolean = false
+) {
   function read() {
     return liveSet.values();
   }
 
   if (!skipReads) {
     // warm up
-    for (let i=0; i<2000; i++) {
+    for (let i = 0; i < 2000; i++) {
       read();
     }
 
     console.time('read');
-    for (let i=0; i<1000; i++) {
+    for (let i = 0; i < 1000; i++) {
       read();
     }
     console.timeEnd('read');
@@ -27,10 +32,10 @@ export default async function benchmarkLiveSet(liveSet: LiveSet<any>, controller
   liveSet.subscribe({});
 
   console.time('warm up first event');
-  for (let i=6; i<200; i++) {
-    await new Promise((resolve,reject) => {
+  for (let i = 6; i < 200; i++) {
+    await new Promise((resolve, reject) => {
       const sub = liveSet.subscribe(() => {
-        if (i===6) {
+        if (i === 6) {
           console.timeEnd('warm up first event');
           console.time('warm up finishing');
         }
@@ -41,8 +46,8 @@ export default async function benchmarkLiveSet(liveSet: LiveSet<any>, controller
           reject(e);
         }
       });
-      controller.add(i*2);
-      controller.add(i*2+1);
+      controller.add(i * 2);
+      controller.add(i * 2 + 1);
     });
   }
   console.timeEnd('warm up finishing');
@@ -54,10 +59,10 @@ export default async function benchmarkLiveSet(liveSet: LiveSet<any>, controller
       console.log('change count', changes.length);
       resolve();
     });
-    for (let i=10000; i<10000+itemsToInsert; i++) {
+    for (let i = 10000; i < 10000 + itemsToInsert; i++) {
       controller.add(i);
     }
-    for (let i=10000; i<10000+itemsToInsert/2; i++) {
+    for (let i = 10000; i < 10000 + itemsToInsert / 2; i++) {
       controller.remove(i);
     }
   });

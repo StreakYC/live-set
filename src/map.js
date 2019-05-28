@@ -2,7 +2,10 @@
 
 import LiveSet from '.';
 
-export default function map<T,U>(liveSet: LiveSet<T>, cb: (value: T) => U): LiveSet<U> {
+export default function map<T, U>(
+  liveSet: LiveSet<T>,
+  cb: (value: T) => U
+): LiveSet<U> {
   return new LiveSet({
     scheduler: liveSet.getScheduler(),
     read() {
@@ -13,7 +16,7 @@ export default function map<T,U>(liveSet: LiveSet<T>, cb: (value: T) => U): Live
       return s;
     },
     listen(setValues, controller) {
-      const m: Map<T,U> = new Map();
+      const m: Map<T, U> = new Map();
 
       const sub = liveSet.subscribe({
         start() {

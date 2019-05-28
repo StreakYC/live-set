@@ -1,16 +1,21 @@
 /* @flow */
 
 import LiveSet from '.';
-import type {LiveSetSubscription} from '.';
+import type { LiveSetSubscription } from '.';
 
-export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => LiveSet<U>): LiveSet<U> {
+export default function flatMap<T, U>(
+  liveSet: LiveSet<T>,
+  cb: (value: T) => LiveSet<U>
+): LiveSet<U> {
   let isReading = false;
 
   return new LiveSet({
     scheduler: liveSet.getScheduler(),
     read() {
       if (isReading) {
-        throw new Error('reading inactive recursively-flatMapped stream is not supported');
+        throw new Error(
+          'reading inactive recursively-flatMapped stream is not supported'
+        );
       }
       isReading = true;
       const s = new Set();
@@ -29,7 +34,8 @@ export default function flatMap<T,U>(liveSet: LiveSet<T>, cb: (value: T) => Live
       const childSetSubs: Map<LiveSet<U>, LiveSetSubscription> = new Map();
 
       function childSetSubscribe(childSet: LiveSet<U>) {
-        if (childSet.isEnded()) { // optimization
+        if (childSet.isEnded()) {
+          // optimization
           childSet.values().forEach(value => {
             controller.add(value);
           });

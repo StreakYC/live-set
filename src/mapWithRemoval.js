@@ -2,14 +2,17 @@
 
 import LiveSet from '.';
 
-export default function mapWithRemoval<T,U>(input: LiveSet<T>, cb: (value: T, removal: Promise<void>) => U): LiveSet<U> {
+export default function mapWithRemoval<T, U>(
+  input: LiveSet<T>,
+  cb: (value: T, removal: Promise<void>) => U
+): LiveSet<U> {
   const output = new LiveSet({
     scheduler: input.getScheduler(),
     read() {
       throw new Error('mapWithRemoval liveset may not be read while inactive');
     },
     listen(setValues, controller) {
-      const m: Map<T, {newValue: U, resolve: Function}> = new Map();
+      const m: Map<T, { newValue: U, resolve: Function }> = new Map();
 
       const sub = input.subscribe({
         start() {
@@ -21,7 +24,7 @@ export default function mapWithRemoval<T,U>(input: LiveSet<T>, cb: (value: T, re
             });
             /*:: if (!resolve) throw new Error(); */
             const newValue = cb(value, removal);
-            m.set(value, {newValue, resolve});
+            m.set(value, { newValue, resolve });
             s.add(newValue);
           });
           setValues(s);
@@ -35,12 +38,12 @@ export default function mapWithRemoval<T,U>(input: LiveSet<T>, cb: (value: T, re
               });
               /*:: if (!resolve) throw new Error(); */
               const newValue = cb(change.value, removal);
-              m.set(change.value, {newValue, resolve});
+              m.set(change.value, { newValue, resolve });
               controller.add(newValue);
             } else if (change.type === 'remove') {
               const entry = m.get(change.value);
               if (!entry) throw new Error('removed item not in liveset');
-              const {newValue, resolve} = entry;
+              const { newValue, resolve } = entry;
               resolve();
               m.delete(change.value);
               controller.remove(newValue);
@@ -58,7 +61,7 @@ export default function mapWithRemoval<T,U>(input: LiveSet<T>, cb: (value: T, re
       return {
         unsubscribe() {
           sub.unsubscribe();
-          m.forEach(({resolve}) => {
+          m.forEach(({ resolve }) => {
             resolve();
           });
         },

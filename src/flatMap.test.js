@@ -20,7 +20,7 @@ test('pullChanges count', async () => {
       };
     }
   });
-  for (let i=0; i<10; i++) {
+  for (let i = 0; i < 10; i++) {
     ls = flatMap(ls, x => LiveSet.constant(new Set([x])));
   }
   const next = jest.fn();
@@ -40,7 +40,5 @@ test('pullChanges count', async () => {
 
   sub.pullChanges();
   expect(pullChanges).toHaveBeenCalledTimes(2);
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 5}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 5 }]]]);
 });

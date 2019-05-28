@@ -5,7 +5,7 @@ import LiveSet from '.';
 import delay from 'pdelay';
 
 test('read', () => {
-  let currentValue = new Set([5,6,7]);
+  let currentValue = new Set([5, 6, 7]);
   const read = jest.fn(() => currentValue);
   const ls = new LiveSet({
     read,
@@ -15,18 +15,18 @@ test('read', () => {
   });
 
   expect(read).toHaveBeenCalledTimes(0);
-  expect(Array.from(ls.values())).toEqual([5,6,7]);
+  expect(Array.from(ls.values())).toEqual([5, 6, 7]);
   expect(read).toHaveBeenCalledTimes(1);
 
-  currentValue = new Set([7,8,9]);
-  expect(Array.from(ls.values())).toEqual([7,8,9]);
+  currentValue = new Set([7, 8, 9]);
+  expect(Array.from(ls.values())).toEqual([7, 8, 9]);
   expect(read).toHaveBeenCalledTimes(2);
 });
 
 test('listen, subscribe', async () => {
   const unsub = jest.fn();
   const ls = new LiveSet({
-    read: () => new Set([4,5]),
+    read: () => new Set([4, 5]),
     listen(setValues, c) {
       const initialValues = this.read();
       setValues(initialValues);
@@ -35,7 +35,7 @@ test('listen, subscribe', async () => {
       c.add(5);
       c.add(6);
       c.add(7);
-      expect(Array.from(initialValues)).toEqual([4,5]);
+      expect(Array.from(initialValues)).toEqual([4, 5]);
 
       let t = setTimeout(() => {
         expect(c.closed).toBe(false);
@@ -59,26 +59,29 @@ test('listen, subscribe', async () => {
   expect(() => firstValues.delete(5)).toThrowError();
   expect(() => firstValues.clear()).toThrowError();
 
-  expect(Array.from(firstValues)).toEqual([4,5]);
+  expect(Array.from(firstValues)).toEqual([4, 5]);
 
   let changeHandlerCallCount = 0;
   const sub = ls.subscribe(changes => {
     switch (changeHandlerCallCount++) {
-    case 0:
-      expect(changes).toEqual([{type: 'remove', value: 5}, {type: 'add', value: 8}]);
-      expect(Array.from(ls.values())).toEqual([4,6,7,8]);
-      expect(sub.closed).toBe(false);
-      sub.unsubscribe();
-      expect(sub.closed).toBe(true);
-      break;
-    default:
-      throw new Error(`Should not happen. ${changeHandlerCallCount}`);
+      case 0:
+        expect(changes).toEqual([
+          { type: 'remove', value: 5 },
+          { type: 'add', value: 8 }
+        ]);
+        expect(Array.from(ls.values())).toEqual([4, 6, 7, 8]);
+        expect(sub.closed).toBe(false);
+        sub.unsubscribe();
+        expect(sub.closed).toBe(true);
+        break;
+      default:
+        throw new Error(`Should not happen. ${changeHandlerCallCount}`);
     }
   });
   expect(sub.closed).toBe(false);
   // The listen function should run immediately
-  expect(Array.from(ls.values())).toEqual([4,5,6,7]);
-  expect(Array.from(firstValues)).toEqual([4,5]);
+  expect(Array.from(ls.values())).toEqual([4, 5, 6, 7]);
+  expect(Array.from(firstValues)).toEqual([4, 5]);
   // The change handler should be called asynchronously
   expect(changeHandlerCallCount).toBe(0);
   expect(unsub).toHaveBeenCalledTimes(0);
@@ -116,14 +119,14 @@ test('subscribe, end', async () => {
   const sub = ls.subscribe(next, null, complete);
   if (!controller) throw new Error();
   expect(next.mock.calls).toEqual([]);
-  expect(Array.from(ls.values())).toEqual([1,2]);
+  expect(Array.from(ls.values())).toEqual([1, 2]);
   await delay(0);
 
   expect(next.mock.calls).toEqual([]);
   expect(complete).toHaveBeenCalledTimes(0);
   expect(sub.closed).toBe(false);
   expect(unsub).toHaveBeenCalledTimes(0);
-  expect(Array.from(ls.values())).toEqual([1,2]);
+  expect(Array.from(ls.values())).toEqual([1, 2]);
   expect(ls.isEnded()).toBe(false);
 
   expect(controller.closed).toBe(false);
@@ -132,23 +135,21 @@ test('subscribe, end', async () => {
   expect(controller.closed).toBe(true);
   await delay(0); // Let async callbacks fire
 
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 3}]],
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 3 }]]]);
   expect(complete).toHaveBeenCalledTimes(1);
   expect(sub.closed).toBe(true);
   expect(unsub).toHaveBeenCalledTimes(1);
   expect(ls.isEnded()).toBe(true);
 
   // Values should be frozen at end time.
-  expect(Array.from(ls.values())).toEqual([1,2,3]);
+  expect(Array.from(ls.values())).toEqual([1, 2, 3]);
 
   {
     const start = jest.fn();
     const next = jest.fn();
     const error = jest.fn();
     const complete = jest.fn();
-    const sub = ls.subscribe({start, next, error, complete});
+    const sub = ls.subscribe({ start, next, error, complete });
     expect(start).toHaveBeenCalledTimes(1);
     expect(start.mock.calls[0][0]).toBe(sub);
     expect(next).toHaveBeenCalledTimes(0);
@@ -164,7 +165,7 @@ test('subscribe, end', async () => {
     const next = jest.fn();
     const error = jest.fn();
     const complete = jest.fn();
-    const sub = ls.subscribe({start, next, error, complete});
+    const sub = ls.subscribe({ start, next, error, complete });
     expect(start).toHaveBeenCalledTimes(1);
     expect(start.mock.calls[0][0]).toEqual(sub);
     expect(next).toHaveBeenCalledTimes(0);
@@ -175,10 +176,13 @@ test('subscribe, end', async () => {
 });
 
 test('error', async () => {
-  const {liveSet, controller} = LiveSet.active(new Set([1]));
+  const { liveSet, controller } = LiveSet.active(new Set([1]));
 
-  const start = jest.fn(), next = jest.fn(), error = jest.fn(), complete = jest.fn();
-  const sub = liveSet.subscribe({start, next, error, complete});
+  const start = jest.fn(),
+    next = jest.fn(),
+    error = jest.fn(),
+    complete = jest.fn();
+  const sub = liveSet.subscribe({ start, next, error, complete });
 
   controller.add(2);
   controller.error(new Error('foo'));
@@ -190,9 +194,7 @@ test('error', async () => {
   expect(complete).toHaveBeenCalledTimes(0);
   expect(sub.closed).toBe(false);
   await delay(0);
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 2}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 2 }]]]);
   expect(error).toHaveBeenCalledTimes(1);
   expect(error.mock.calls[0][0].message).toBe('foo');
   expect(complete).toHaveBeenCalledTimes(0);
@@ -200,7 +202,7 @@ test('error', async () => {
 });
 
 test("don't receive changes that already happened when subscribing", async () => {
-  const {liveSet, controller} = LiveSet.active(new Set([5]));
+  const { liveSet, controller } = LiveSet.active(new Set([5]));
   controller.remove(5);
   controller.add(6);
 
@@ -211,8 +213,7 @@ test("don't receive changes that already happened when subscribing", async () =>
 
   await delay(0);
 
-  expect(next.mock.calls).toEqual([
-  ]);
+  expect(next.mock.calls).toEqual([]);
 });
 
 test('subscribe, unsubscribe, subscribe', async () => {
@@ -235,22 +236,20 @@ test('subscribe, unsubscribe, subscribe', async () => {
     }
   });
 
-  for (let i=0; i<3; i++) {
+  for (let i = 0; i < 3; i++) {
     expect(Array.from(ls.values())).toEqual([1]);
     const changeHandler = jest.fn();
     const sub = ls.subscribe(changeHandler);
     expect(changeHandler.mock.calls).toEqual([]);
-    expect(Array.from(ls.values())).toEqual([1,2]);
+    expect(Array.from(ls.values())).toEqual([1, 2]);
     await delay(1);
     expect(changeHandler.mock.calls).toEqual([]);
-    expect(Array.from(ls.values())).toEqual([1,2]);
+    expect(Array.from(ls.values())).toEqual([1, 2]);
     if (!lsStep) throw new Error('liveset is not being listened to currently');
     lsStep();
     await delay(0);
-    expect(changeHandler.mock.calls).toEqual([
-      [[{type: 'add', value: 3}]]
-    ]);
-    expect(Array.from(ls.values())).toEqual([1,2,3]);
+    expect(changeHandler.mock.calls).toEqual([[[{ type: 'add', value: 3 }]]]);
+    expect(Array.from(ls.values())).toEqual([1, 2, 3]);
     sub.unsubscribe();
     await delay(0);
   }
@@ -282,19 +281,19 @@ test('multiple subscribers, one immediate unsubscription', async () => {
   expect(listenStart).toHaveBeenCalledTimes(0);
   const sub1 = ls.subscribe({});
   // The listen function should run immediately
-  expect(Array.from(ls.values())).toEqual([1,2]);
+  expect(Array.from(ls.values())).toEqual([1, 2]);
   expect(listenStart).toHaveBeenCalledTimes(1);
 
   let changeHandlerCallCount = 0;
   const sub2 = ls.subscribe(changes => {
     switch (changeHandlerCallCount++) {
-    case 0:
-      expect(changes).toEqual([{type: 'add', value: 3}]);
-      expect(Array.from(ls.values())).toEqual([1,2,3]);
-      sub2.unsubscribe();
-      break;
-    default:
-      throw new Error(`Should not happen. ${changeHandlerCallCount}`);
+      case 0:
+        expect(changes).toEqual([{ type: 'add', value: 3 }]);
+        expect(Array.from(ls.values())).toEqual([1, 2, 3]);
+        sub2.unsubscribe();
+        break;
+      default:
+        throw new Error(`Should not happen. ${changeHandlerCallCount}`);
     }
   });
 
@@ -335,34 +334,34 @@ test('multiple subscribers', async () => {
   let changeHandler1CallCount = 0;
   const sub1 = ls.subscribe(changes => {
     switch (changeHandler1CallCount++) {
-    case 0:
-      expect(changes).toEqual([{type: 'add', value: 3}]);
-      expect(Array.from(ls.values())).toEqual([1,2,3]);
-      expect(sub1.closed).toBe(false);
-      sub1.unsubscribe();
-      expect(sub1.closed).toBe(true);
-      break;
-    default:
-      throw new Error(`Should not happen. ${changeHandler1CallCount}`);
+      case 0:
+        expect(changes).toEqual([{ type: 'add', value: 3 }]);
+        expect(Array.from(ls.values())).toEqual([1, 2, 3]);
+        expect(sub1.closed).toBe(false);
+        sub1.unsubscribe();
+        expect(sub1.closed).toBe(true);
+        break;
+      default:
+        throw new Error(`Should not happen. ${changeHandler1CallCount}`);
     }
   });
 
   // The listen function should run immediately
-  expect(Array.from(ls.values())).toEqual([1,2]);
+  expect(Array.from(ls.values())).toEqual([1, 2]);
   expect(listenStart).toHaveBeenCalledTimes(1);
 
   let changeHandler2CallCount = 0;
   const sub2 = ls.subscribe(changes => {
     switch (changeHandler2CallCount++) {
-    case 0:
-      expect(changes).toEqual([{type: 'add', value: 3}]);
-      expect(Array.from(ls.values())).toEqual([1,2,3]);
-      expect(sub2.closed).toBe(false);
-      sub2.unsubscribe();
-      expect(sub2.closed).toBe(true);
-      break;
-    default:
-      throw new Error(`Should not happen. ${changeHandler2CallCount}`);
+      case 0:
+        expect(changes).toEqual([{ type: 'add', value: 3 }]);
+        expect(Array.from(ls.values())).toEqual([1, 2, 3]);
+        expect(sub2.closed).toBe(false);
+        sub2.unsubscribe();
+        expect(sub2.closed).toBe(true);
+        break;
+      default:
+        throw new Error(`Should not happen. ${changeHandler2CallCount}`);
     }
   });
 
@@ -380,15 +379,16 @@ test('multiple subscribers', async () => {
 
 test('immediate end', async () => {
   const liveSet = new LiveSet({
-    read: () => new Set([5,6]),
+    read: () => new Set([5, 6]),
     listen(setValues, controller) {
       setValues(this.read());
       controller.add(7);
       controller.end();
     }
   });
-  const next = jest.fn(), complete = jest.fn();
-  liveSet.subscribe({next, complete});
+  const next = jest.fn(),
+    complete = jest.fn();
+  liveSet.subscribe({ next, complete });
   expect(next.mock.calls).toEqual([]);
   expect(complete).toHaveBeenCalledTimes(0);
   await delay(0);
@@ -397,104 +397,78 @@ test('immediate end', async () => {
 });
 
 test('pullChanges', async () => {
-  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
-  const next = jest.fn(), next2 = jest.fn();
+  const { liveSet, controller } = LiveSet.active(new Set([5, 6]));
+  const next = jest.fn(),
+    next2 = jest.fn();
   const sub = liveSet.subscribe(next);
   liveSet.subscribe(next2);
   controller.add(7);
-  expect(next.mock.calls).toEqual([
-  ]);
-  expect(next2.mock.calls).toEqual([
-  ]);
+  expect(next.mock.calls).toEqual([]);
+  expect(next2.mock.calls).toEqual([]);
   sub.pullChanges();
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
-  expect(next2.mock.calls).toEqual([
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
+  expect(next2.mock.calls).toEqual([]);
   await delay(0);
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
-  expect(next2.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
+  expect(next2.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
   controller.add(8);
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
-  expect(next2.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
+  expect(next2.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
   await delay(0);
   expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]],
-    [[{type: 'add', value: 8}]]
+    [[{ type: 'add', value: 7 }]],
+    [[{ type: 'add', value: 8 }]]
   ]);
   expect(next2.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]],
-    [[{type: 'add', value: 8}]]
+    [[{ type: 'add', value: 7 }]],
+    [[{ type: 'add', value: 8 }]]
   ]);
 });
 
 test('Scheduler.flush()', async () => {
-  const {liveSet, controller} = LiveSet.active(new Set([5,6]));
+  const { liveSet, controller } = LiveSet.active(new Set([5, 6]));
   const next = jest.fn();
   liveSet.subscribe(next);
   controller.add(7);
-  expect(next.mock.calls).toEqual([
-  ]);
+  expect(next.mock.calls).toEqual([]);
   LiveSet.defaultScheduler.flush();
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
   await delay(0);
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
   controller.add(8);
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
   await delay(0);
   expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]],
-    [[{type: 'add', value: 8}]]
+    [[{ type: 'add', value: 7 }]],
+    [[{ type: 'add', value: 8 }]]
   ]);
 });
 
 test('pullChanges and ignoring already-delivered values', async () => {
-  const {liveSet, controller} = LiveSet.active(new Set([5]));
+  const { liveSet, controller } = LiveSet.active(new Set([5]));
   const next = jest.fn();
   controller.add(6);
   const sub = liveSet.subscribe(next);
   controller.add(7);
-  expect(next.mock.calls).toEqual([
-  ]);
+  expect(next.mock.calls).toEqual([]);
   sub.pullChanges();
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
   await delay(0);
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
   controller.add(8);
   controller.add(9);
-  expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'add', value: 7 }]]]);
   await delay(0);
   expect(next.mock.calls).toEqual([
-    [[{type: 'add', value: 7}]],
-    [[{type: 'add', value: 8}, {type: 'add', value: 9}]],
+    [[{ type: 'add', value: 7 }]],
+    [[{ type: 'add', value: 8 }, { type: 'add', value: 9 }]]
   ]);
 });
 
 test('ignore events from listen callback', async () => {
   let controller;
   const ls = new LiveSet({
-    read: () => new Set([1,2]),
+    read: () => new Set([1, 2]),
     listen(setValues, _controller) {
       setValues(this.read());
       controller = _controller;
@@ -509,14 +483,12 @@ test('ignore events from listen callback', async () => {
   expect(next).toHaveBeenCalledTimes(0);
   controller.remove(2);
   await delay(0);
-  expect(next.mock.calls).toEqual([
-    [[{type: 'remove', value: 2}]]
-  ]);
+  expect(next.mock.calls).toEqual([[[{ type: 'remove', value: 2 }]]]);
 });
 
 test('values() triggers pullChanges()', () => {
   const ls = new LiveSet({
-    read: () => new Set([5,6]),
+    read: () => new Set([5, 6]),
     listen(setValues, controller) {
       setValues(this.read());
       return {
@@ -528,17 +500,20 @@ test('values() triggers pullChanges()', () => {
     }
   });
 
-  expect(Array.from(ls.values())).toEqual([5,6]);
+  expect(Array.from(ls.values())).toEqual([5, 6]);
   ls.subscribe({});
-  expect(Array.from(ls.values())).toEqual([5,6,7]);
+  expect(Array.from(ls.values())).toEqual([5, 6, 7]);
 });
 
 test('constant', async () => {
-  const ls = LiveSet.constant(new Set([5,6,7]));
+  const ls = LiveSet.constant(new Set([5, 6, 7]));
   expect(ls.isEnded()).toBe(true);
-  expect(Array.from(ls.values())).toEqual([5,6,7]);
-  const start = jest.fn(), next = jest.fn(), error = jest.fn(), complete = jest.fn();
-  const sub = ls.subscribe({start, next, error, complete});
+  expect(Array.from(ls.values())).toEqual([5, 6, 7]);
+  const start = jest.fn(),
+    next = jest.fn(),
+    error = jest.fn(),
+    complete = jest.fn();
+  const sub = ls.subscribe({ start, next, error, complete });
   expect(sub.closed).toBe(true);
   expect(start).toHaveBeenCalledTimes(1);
   expect(next).toHaveBeenCalledTimes(0);
@@ -552,9 +527,16 @@ test('constant', async () => {
 });
 
 test('immediate unsubscribe from ended liveset', async () => {
-  const ls = LiveSet.constant(new Set([5,6,7]));
-  const next = jest.fn(), error = jest.fn(), complete = jest.fn();
-  const sub = ls.subscribe({start: sub => sub.unsubscribe(), next, error, complete});
+  const ls = LiveSet.constant(new Set([5, 6, 7]));
+  const next = jest.fn(),
+    error = jest.fn(),
+    complete = jest.fn();
+  const sub = ls.subscribe({
+    start: sub => sub.unsubscribe(),
+    next,
+    error,
+    complete
+  });
   expect(sub.closed).toBe(true);
   expect(next).toHaveBeenCalledTimes(0);
   expect(error).toHaveBeenCalledTimes(0);

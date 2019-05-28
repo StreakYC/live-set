@@ -3,13 +3,22 @@
 
 import LiveSet from '.';
 
-declare function filter<T>(liveSet: LiveSet<T>, cb: typeof Boolean): LiveSet<$NonMaybeType<T>>;
-declare function filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): LiveSet<T>;
+declare function filter<T>(
+  liveSet: LiveSet<T>,
+  cb: typeof Boolean
+): LiveSet<$NonMaybeType<T>>;
+declare function filter<T>(
+  liveSet: LiveSet<T>,
+  cb: (value: T) => any
+): LiveSet<T>;
 
 /*:: export default filter; */
 
 /*:: ` */
-export default function filter<T>(liveSet: LiveSet<T>, cb: (value: T) => any): LiveSet<T> {
+export default function filter<T>(
+  liveSet: LiveSet<T>,
+  cb: (value: T) => any
+): LiveSet<T> {
   return new LiveSet({
     scheduler: liveSet.getScheduler(),
     read() {
